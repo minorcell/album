@@ -1,0 +1,140 @@
+import { NextResponse } from "next/server";
+import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { addHours, isAfter } from "date-fns";
+
+import { prisma } from "@/lib/db";
+import { requireAdmin } from "@/lib/auth-guards";
+
+const createShareSchema = z.object({
+  categoryId: z.number().int(),
+  password: z.string().min(4).max(50).optional(),
+  expireInHours: z.number().int().positive().max(720).optional(),
+});
+
+const shareAccessSchema = z.object({
+  token: z.string().min(8),
+  password: z.string().optional(),
+});
+
+export async function POST(request: Request) {
+  const adminCheck = await requireAdmin();
+  if ("error" in adminCheck) return adminCheck.error;
+
+  const body = await request.json().catch(() => null);
+  const parsed = createShareSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+  }
+
+  const category = await prisma.category.findUnique({
+    where: { id: parsed.data.categoryId },
+  });
+
+  if (!category) {
+    return NextResponse.json({ error: "分类不存在" }, { status: 404 });
+  }
+
+  const token = uuidv4().replace(/-/g, "");
+  const expiresAt = parsed.data.expireInHours
+    ? addHours(new Date(), parsed.data.expireInHours)
+    : null;
+
+  const passwordHash = parsed.data.password
+    ? await bcrypt.hash(parsed.data.password, 10)
+    : null;
+
+  const shareLink = await prisma.shareLink.create({
+    data: {
+      categoryId: parsed.data.categoryId,
+      token,
+      password: passwordHash,
+      expiresAt,
+    },
+    select: {
+      id: true,
+      token: true,
+      expiresAt: true,
+      categoryId: true,
+      createdAt: true,
+    },
+  });
+
+  return NextResponse.json(shareLink, { status: 201 });
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const parsed = shareAccessSchema.safeParse({
+    token: searchParams.get("token"),
+    password: searchParams.get("password") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "无效的分享链接" }, { status: 400 });
+  }
+
+  const shareLink = await prisma.shareLink.findUnique({
+    where: { token: parsed.data.token },
+    include: {
+      category: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          photos: {
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              filename: true,
+              originalName: true,
+              description: true,
+              createdAt: true,
+              uploader: {
+                select: { username: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!shareLink) {
+    return NextResponse.json({ error: "分享链接不存在" }, { status: 404 });
+  }
+
+  if (shareLink.expiresAt && isAfter(new Date(), shareLink.expiresAt)) {
+    return NextResponse.json({ error: "分享链接已过期" }, { status: 410 });
+  }
+
+  if (shareLink.password) {
+    if (!parsed.data.password) {
+      return NextResponse.json({ error: "需要访问密码" }, { status: 401 });
+    }
+    const match = await bcrypt.compare(parsed.data.password, shareLink.password);
+    if (!match) {
+      return NextResponse.json({ error: "密码错误" }, { status: 401 });
+    }
+  }
+
+  return NextResponse.json({
+    token: shareLink.token,
+    expiresAt: shareLink.expiresAt?.toISOString() ?? null,
+    category: {
+      id: shareLink.category.id,
+      name: shareLink.category.name,
+      description: shareLink.category.description,
+      photos: shareLink.category.photos.map((photo) => ({
+        id: photo.id,
+        filename: photo.filename,
+        originalName: photo.originalName,
+        description: photo.description,
+        createdAt: photo.createdAt.toISOString(),
+        uploader: photo.uploader.username,
+        thumbnail: `thumbnails/thumb-${photo.filename}`,
+      })),
+    },
+  });
+}

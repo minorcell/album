@@ -1,0 +1,67 @@
+// Prisma schema for Studio Album application
+
+// Using MySQL per project requirements
+// When modifying this schema, run `pnpm prisma db push`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Point datasource to DATABASE_URL from .env
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  role      UserRole @default(member)
+  photos    Photo[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  visibility  CategoryVisibility @default(internal)
+  photos      Photo[]
+  shareLinks  ShareLink[]
+  createdAt   DateTime @default(now())
+}
+
+model Photo {
+  id           Int      @id @default(autoincrement())
+  filename     String
+  originalName String
+  description  String?
+  categoryId   Int
+  uploaderId   Int
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  uploader     User     @relation(fields: [uploaderId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model ShareLink {
+  id         Int       @id @default(autoincrement())
+  categoryId Int
+  token      String    @unique
+  password   String?
+  expiresAt  DateTime?
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+}
+
+enum UserRole {
+  admin
+  member
+}
+
+enum CategoryVisibility {
+  private
+  internal
+  public
+}
