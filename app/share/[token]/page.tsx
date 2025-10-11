@@ -1,5 +1,10 @@
 import { ShareViewer } from "@/components/share-viewer";
 
-export default function SharePage({ params }: { params: { token: string } }) {
-  return <ShareViewer token={params.token} />;
+export default async function SharePage({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}) {
+  const { token } = await params;
+  return <ShareViewer token={token} />;
 }

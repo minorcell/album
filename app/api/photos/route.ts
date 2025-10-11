@@ -135,10 +135,9 @@ export async function POST(request: Request) {
   }
 
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
-  const zipArrayBuffer = zipBuffer.buffer.slice(
-    zipBuffer.byteOffset,
-    zipBuffer.byteOffset + zipBuffer.byteLength,
-  );
+  const zipArrayBuffer = new ArrayBuffer(zipBuffer.byteLength);
+  const zipView = new Uint8Array(zipArrayBuffer);
+  zipView.set(new Uint8Array(zipBuffer.buffer, zipBuffer.byteOffset, zipBuffer.byteLength));
 
   const response = new Response(zipArrayBuffer, {
     headers: {
