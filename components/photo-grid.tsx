@@ -49,6 +49,8 @@ export function PhotoGrid({
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [zoomLevel, setZoomLevel] = useState<"day" | "month" | "year">("day");
+  const [pinchDistance, setPinchDistance] = useState<number | null>(null);
 
   const groups = useMemo(() => {
     const map = new Map<
@@ -62,8 +64,25 @@ export function PhotoGrid({
 
     photos.forEach((photo) => {
       const date = new Date(photo.createdAt);
-      const key = format(date, "yyyy-MM-dd");
-      const label = format(date, "yyyy年MM月dd日 EEEE", { locale: zhCN });
+      let key: string;
+      let label: string;
+
+      switch (zoomLevel) {
+        case "year":
+          key = format(date, "yyyy");
+          label = format(date, "yyyy年", { locale: zhCN });
+          break;
+        case "month":
+          key = format(date, "yyyy-MM");
+          label = format(date, "yyyy年MM月", { locale: zhCN });
+          break;
+        case "day":
+        default:
+          key = format(date, "yyyy-MM-dd");
+          label = format(date, "yyyy年MM月dd日 EEEE", { locale: zhCN });
+          break;
+      }
+
       if (!map.has(key)) {
         map.set(key, { key, label, items: [] });
       }
@@ -71,7 +90,7 @@ export function PhotoGrid({
     });
 
     return Array.from(map.values());
-  }, [photos]);
+  }, [photos, zoomLevel]);
 
   const selectedPhotos = useMemo(
     () => photos.filter((photo) => selectedIds.has(photo.id)),
@@ -246,17 +265,155 @@ export function PhotoGrid({
     [selectionMode, toggleSelection],
   );
 
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel((prev) => {
+      if (prev === "year") return "month";
+      if (prev === "month") return "day";
+      return "day";
+    });
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel((prev) => {
+      if (prev === "day") return "month";
+      if (prev === "month") return "year";
+      return "year";
+    });
+  }, []);
+
+  const handleWheel = useCallback(
+    (event: React.WheelEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+        if (event.deltaY < 0) {
+          handleZoomIn();
+        } else if (event.deltaY > 0) {
+          handleZoomOut();
+        }
+      }
+    },
+    [handleZoomIn, handleZoomOut],
+  );
+
+  const handleTouchStart = useCallback((event: React.TouchEvent) => {
+    if (event.touches.length === 2) {
+      const distance = Math.hypot(
+        event.touches[0].clientX - event.touches[1].clientX,
+        event.touches[0].clientY - event.touches[1].clientY,
+      );
+      setPinchDistance(distance);
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (event: React.TouchEvent) => {
+      if (event.touches.length === 2 && pinchDistance !== null) {
+        const distance = Math.hypot(
+          event.touches[0].clientX - event.touches[1].clientX,
+          event.touches[0].clientY - event.touches[1].clientY,
+        );
+        const delta = distance - pinchDistance;
+
+        if (Math.abs(delta) > 50) {
+          if (delta > 0) {
+            handleZoomIn();
+          } else {
+            handleZoomOut();
+          }
+          setPinchDistance(distance);
+        }
+      }
+    },
+    [pinchDistance, handleZoomIn, handleZoomOut],
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setPinchDistance(null);
+  }, []);
+
+  const gridColsClass = useMemo(() => {
+    switch (zoomLevel) {
+      case "year":
+        return "sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8";
+      case "month":
+        return "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6";
+      case "day":
+      default:
+        return "sm:grid-cols-2 lg:grid-cols-3";
+    }
+  }, [zoomLevel]);
+
+  const cardPaddingClass = useMemo(() => {
+    switch (zoomLevel) {
+      case "year":
+        return "p-1.5";
+      case "month":
+        return "p-2";
+      case "day":
+      default:
+        return "p-3";
+    }
+  }, [zoomLevel]);
+
+  const textSizeClass = useMemo(() => {
+    switch (zoomLevel) {
+      case "year":
+        return "text-xs";
+      case "month":
+        return "text-xs";
+      case "day":
+      default:
+        return "text-sm";
+    }
+  }, [zoomLevel]);
+
   return (
     <>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-muted-foreground">
-          {selectionMode
-            ? selectedCount > 0
-              ? `已选择 ${selectedCount} 张图片`
-              : "点击图片以选择"
-            : "点击图片查看大图，或开启选择模式进行批量操作"}
+        <div className="space-y-1">
+          <div className="text-sm text-muted-foreground">
+            {selectionMode
+              ? selectedCount > 0
+                ? `已选择 ${selectedCount} 张图片`
+                : "点击图片以选择"
+              : "点击图片查看大图，或开启选择模式进行批量操作"}
+          </div>
+          {!selectionMode && (
+            <div className="text-xs text-muted-foreground/70">
+              Ctrl+滚轮 或 双指捏合 可缩放视图
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center rounded-md border border-border p-1">
+            <Button
+              type="button"
+              variant={zoomLevel === "day" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setZoomLevel("day")}
+              title="按天显示"
+            >
+              天
+            </Button>
+            <Button
+              type="button"
+              variant={zoomLevel === "month" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setZoomLevel("month")}
+              title="按月显示"
+            >
+              月
+            </Button>
+            <Button
+              type="button"
+              variant={zoomLevel === "year" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setZoomLevel("year")}
+              title="按年显示"
+            >
+              年
+            </Button>
+          </div>
           <div className="flex items-center rounded-md border border-border p-1">
             <Button
               type="button"
@@ -340,11 +497,17 @@ export function PhotoGrid({
       ) : null}
 
       {viewMode === "grid" ? (
-        <div className="space-y-6">
+        <div
+          className="space-y-6"
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {groups.map((group) => (
             <div key={group.key} className="space-y-3">
               <h3 className="text-sm font-medium text-muted-foreground">{group.label}</h3>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className={cn("grid gap-4", gridColsClass)}>
                 {group.items.map((photo) => {
                   const isSelected = selectedIds.has(photo.id);
                   return (
@@ -353,7 +516,7 @@ export function PhotoGrid({
                       type="button"
                       onClick={() => handleRowClick(photo)}
                       className={cn(
-                        "group relative overflow-hidden rounded-xl border border-border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+                        "group relative overflow-hidden rounded-xl border border-border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary flex flex-col",
                         isSelected ? "border-primary ring-2 ring-primary/40" : "hover:shadow-lg",
                       )}
                     >
@@ -369,23 +532,28 @@ export function PhotoGrid({
                           />
                         </span>
                       ) : null}
-                      <div className="relative aspect-[4/3]">
+                      <div className="relative aspect-square w-full">
                         <Image
                           src={`/uploads/${photo.thumbnail}`}
                           alt={photo.description ?? photo.filename}
                           fill
-                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                           className="object-cover transition duration-200 group-hover:scale-105"
                           unoptimized
                         />
                       </div>
-                      <div className="space-y-2 p-4">
-                        <p className="line-clamp-2 text-sm text-muted-foreground">
-                          {photo.description || "无描述"}
-                        </p>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{photo.uploader}</span>
-                          <span>{format(new Date(photo.createdAt), "HH:mm", { locale: zhCN })}</span>
+                      <div className={cn("space-y-1", cardPaddingClass)}>
+                        {zoomLevel === "day" && (
+                          <p className={cn("line-clamp-2 text-muted-foreground", textSizeClass)}>
+                            {photo.description || "无描述"}
+                          </p>
+                        )}
+                        <div className={cn("flex items-center justify-between text-muted-foreground",
+                          zoomLevel === "year" ? "text-[10px]" : "text-xs")}>
+                          {zoomLevel !== "year" && <span className="truncate">{photo.uploader}</span>}
+                          <span className={zoomLevel === "year" ? "mx-auto" : "ml-auto"}>
+                            {format(new Date(photo.createdAt), zoomLevel === "day" ? "HH:mm" : "MM-dd", { locale: zhCN })}
+                          </span>
                         </div>
                       </div>
                     </button>
@@ -481,7 +649,7 @@ export function PhotoGrid({
         }}
       >
         <DialogContent
-          className="h-screen w-screen max-w-none border-none bg-black/90 p-4 text-white sm:p-6"
+          className="!fixed !inset-0 !h-screen !w-screen !max-w-none !translate-x-0 !translate-y-0 !top-0 !left-0 border-none bg-black/90 p-4 text-white sm:p-6 rounded-none"
           showCloseButton={false}
         >
           {activePhoto && (

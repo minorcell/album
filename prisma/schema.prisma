@@ -15,12 +15,13 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
+  id        Int         @id @default(autoincrement())
+  username  String      @unique
   password  String
-  role      UserRole @default(member)
+  role      UserRole    @default(member)
+  status    UserStatus  @default(pending)
   photos    Photo[]
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
 }
 
 model Category {
@@ -58,6 +59,12 @@ model ShareLink {
 enum UserRole {
   admin
   member
+}
+
+enum UserStatus {
+  pending
+  active
+  rejected
 }
 
 enum CategoryVisibility {

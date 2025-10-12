@@ -66,7 +66,7 @@ export default async function HomePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => (
             <Link key={category.id} href={`/album/${category.id}`}>
-              <Card className="group relative h-64 overflow-hidden border transition hover:shadow-xl">
+              <Card className="group relative h-64 overflow-hidden border p-0 transition hover:shadow-xl">
                 {category.photos[0] ? (
                   <ImageFill filename={category.photos[0].filename} />
                 ) : (

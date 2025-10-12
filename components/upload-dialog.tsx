@@ -37,7 +37,7 @@ export function UploadDialog({
       <DialogContent className="max-w-2xl" onOpenAutoFocus={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle>上传图片</DialogTitle>
-          <DialogDescription>支持批量上传 JPG / PNG 图片，单个文件不超过 10MB。</DialogDescription>
+          <DialogDescription>支持批量上传 JPG / PNG / GIF / WebP 图片，单个文件不超过 10MB。</DialogDescription>
         </DialogHeader>
         <UploadForm categories={categories} defaultCategoryId={defaultCategoryId} onSuccess={handleSuccess} />
       </DialogContent>

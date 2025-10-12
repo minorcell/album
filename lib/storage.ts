@@ -6,7 +6,7 @@ import sharp from "sharp";
 const UPLOAD_PATH = process.env.UPLOAD_PATH ?? "./public/uploads";
 const THUMBNAIL_DIR = path.join(UPLOAD_PATH, "thumbnails");
 
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png"]);
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export class UploadError extends Error {
@@ -21,7 +21,7 @@ export class UploadError extends Error {
 
 export async function persistImage(file: File) {
   if (!ALLOWED_MIME.has(file.type)) {
-    throw new UploadError("仅支持 JPG/PNG 图片");
+    throw new UploadError("仅支持 JPG/PNG/GIF/WebP 图片");
   }
 
   if (file.size > MAX_FILE_SIZE) {
@@ -62,6 +62,10 @@ function getExtensionFromMime(mime: string) {
       return ".jpg";
     case "image/png":
       return ".png";
+    case "image/gif":
+      return ".gif";
+    case "image/webp":
+      return ".webp";
     default:
       return "";
   }

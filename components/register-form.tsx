@@ -40,11 +40,14 @@ export function RegisterForm({ onSuccess }: { onSuccess?: (payload: { role: stri
         throw new Error(payload.error ?? "注册失败");
       }
 
-      setMessage(
-        payload.role === "admin"
-          ? "注册成功，已创建管理员账户，请使用该账号登录"
-          : "注册成功，请使用新账号登录"
-      );
+      if (payload.status === "pending") {
+        setMessage("注册成功，请等待管理员审核通过后登录");
+      } else if (payload.role === "admin") {
+        setMessage("注册成功，已创建管理员账户，请使用该账号登录");
+      } else {
+        setMessage("注册成功，请使用新账号登录");
+      }
+
       setUsername("");
       setPassword("");
       setConfirmPassword("");

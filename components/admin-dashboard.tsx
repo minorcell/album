@@ -12,7 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { LayoutDashboard } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { LayoutDashboard, Copy, Trash2 } from "lucide-react";
 import type { CategoryVisibility } from "@prisma/client";
 
 interface CategoryItem {
@@ -28,6 +30,7 @@ interface UserItem {
   id: number;
   username: string;
   role: string;
+  status: "pending" | "active" | "rejected";
   photoCount: number;
   createdAt: string;
 }
@@ -52,6 +55,9 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const pendingUsers = users.filter((u) => u.status === "pending");
+  const activeUsers = users.filter((u) => u.status === "active");
+
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState("");
   const [categoryDescription, setCategoryDescription] = useState("");
@@ -59,10 +65,19 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
 
   const [selectedUserRole, setSelectedUserRole] = useState<Record<number, string>>({});
 
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [deleteTransferUserId, setDeleteTransferUserId] = useState<number | null>(null);
+  const [deletePhotosDirectly, setDeletePhotosDirectly] = useState(false);
+
+  const [resettingPasswordUserId, setResettingPasswordUserId] = useState<number | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
   const [shareCategoryId, setShareCategoryId] = useState<number | null>(null);
   const [sharePassword, setSharePassword] = useState("");
   const [expireHours, setExpireHours] = useState("24");
   const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [copySuccessMessage, setCopySuccessMessage] = useState<string | null>(null);
 
   const shareBaseUrl = useMemo(() => {
     if (typeof window !== "undefined") {
@@ -156,6 +171,104 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
     startTransition(() => router.refresh());
   };
 
+  const handleUserStatusChange = async (id: number, status: "pending" | "active" | "rejected") => {
+    setError(null);
+
+    const response = await fetch("/api/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "状态更新失败");
+      return;
+    }
+
+    startTransition(() => router.refresh());
+  };
+
+  const handlePasswordReset = async () => {
+    if (!resettingPasswordUserId) return;
+    setError(null);
+
+    if (!newPassword || !confirmNewPassword) {
+      setError("请输入新密码");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setError("两次输入的密码不一致");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("密码至少 6 位");
+      return;
+    }
+
+    const response = await fetch("/api/users/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: resettingPasswordUserId,
+        newPassword: newPassword,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "密码重置失败");
+      return;
+    }
+
+    setResettingPasswordUserId(null);
+    setNewPassword("");
+    setConfirmNewPassword("");
+    alert("密码重置成功");
+  };
+
+  const handleUserDelete = async () => {
+    if (!deletingUserId) return;
+    setError(null);
+
+    const user = users.find((u) => u.id === deletingUserId);
+    if (!user) return;
+
+    if (user.photoCount > 0 && !deletePhotosDirectly && !deleteTransferUserId) {
+      setError("该用户有照片，请选择转移到其他用户或直接删除照片");
+      return;
+    }
+
+    const payload: { id: number; transferToUserId?: number; deletePhotos?: boolean } = {
+      id: deletingUserId,
+    };
+
+    if (deletePhotosDirectly) {
+      payload.deletePhotos = true;
+    } else if (deleteTransferUserId) {
+      payload.transferToUserId = deleteTransferUserId;
+    }
+
+    const response = await fetch("/api/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "删除用户失败");
+      return;
+    }
+
+    setDeletingUserId(null);
+    setDeleteTransferUserId(null);
+    setDeletePhotosDirectly(false);
+    startTransition(() => router.refresh());
+  };
+
   const handleShareCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setShareMessage(null);
@@ -186,6 +299,40 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
     setShareMessage(`${shareBaseUrl}${body.token}`);
     setSharePassword("");
     setExpireHours("24");
+    startTransition(() => router.refresh());
+  };
+
+  const handleCopyShareLink = async (token: string) => {
+    const fullUrl = `${shareBaseUrl}${token}`;
+    setCopySuccessMessage(null);
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopySuccessMessage("链接已复制到剪贴板");
+      setTimeout(() => setCopySuccessMessage(null), 3000);
+    } catch {
+      setError("复制失败，请手动复制链接");
+    }
+  };
+
+  const handleDeleteShareLink = async (id: number) => {
+    setError(null);
+    if (!window.confirm("确认删除该分享链接？")) {
+      return;
+    }
+
+    const response = await fetch("/api/share", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "删除分享链接失败");
+      return;
+    }
+
     startTransition(() => router.refresh());
   };
 
@@ -307,56 +454,114 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">
-          <div className="overflow-hidden rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>用户名</TableHead>
-                  <TableHead>角色</TableHead>
-                  <TableHead>上传数</TableHead>
-                  <TableHead>创建时间</TableHead>
-                  <TableHead className="w-40">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.username}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
-                    </TableCell>
-                    <TableCell>{user.photoCount}</TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                    <TableCell className="flex flex-wrap items-center gap-2">
-                      <Select
-                        value={selectedUserRole[user.id] ?? user.role}
-                        onValueChange={(value) =>
-                          setSelectedUserRole((prev) => ({
-                            ...prev,
-                            [user.id]: value,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue placeholder="选择角色" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">管理员</SelectItem>
-                          <SelectItem value="member">成员</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUserRoleChange(user.id, selectedUserRole[user.id] ?? user.role)}
-                      >
-                        保存
-                      </Button>
-                    </TableCell>
+          {pendingUsers.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">待审核用户</h3>
+              <div className="overflow-hidden rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>用户名</TableHead>
+                      <TableHead>创建时间</TableHead>
+                      <TableHead className="w-48">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.username}</TableCell>
+                        <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell className="flex flex-wrap items-center gap-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleUserStatusChange(user.id, "active")}
+                          >
+                            通过
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleUserStatusChange(user.id, "rejected")}
+                          >
+                            拒绝
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-medium">已激活成员</h3>
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>用户名</TableHead>
+                    <TableHead>角色</TableHead>
+                    <TableHead>上传数</TableHead>
+                    <TableHead>创建时间</TableHead>
+                    <TableHead className="w-60">操作</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {activeUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.username}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
+                      </TableCell>
+                      <TableCell>{user.photoCount}</TableCell>
+                      <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell className="flex flex-wrap items-center gap-2">
+                        <Select
+                          value={selectedUserRole[user.id] ?? user.role}
+                          onValueChange={(value) =>
+                            setSelectedUserRole((prev) => ({
+                              ...prev,
+                              [user.id]: value,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue placeholder="选择角色" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">管理员</SelectItem>
+                            <SelectItem value="member">成员</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUserRoleChange(user.id, selectedUserRole[user.id] ?? user.role)}
+                        >
+                          保存
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setResettingPasswordUserId(user.id)}
+                        >
+                          重置密码
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setDeletingUserId(user.id)}
+                        >
+                          删除
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </TabsContent>
 
@@ -411,6 +616,13 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
             </Alert>
           )}
 
+          {copySuccessMessage && (
+            <Alert>
+              <AlertTitle>操作成功</AlertTitle>
+              <AlertDescription>{copySuccessMessage}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="overflow-hidden rounded-lg border">
             <Table>
               <TableHeader>
@@ -418,6 +630,7 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
                   <TableHead>分类</TableHead>
                   <TableHead>链接</TableHead>
                   <TableHead>过期时间</TableHead>
+                  <TableHead className="w-32">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -431,6 +644,24 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
                     <TableCell>
                       {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : "不限"}
                     </TableCell>
+                    <TableCell className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyShareLink(link.token)}
+                        title="复制链接"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteShareLink(link.id)}
+                        title="删除链接"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -438,6 +669,137 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={deletingUserId !== null} onOpenChange={(open) => !open && setDeletingUserId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除用户</DialogTitle>
+            <DialogDescription>
+              {deletingUserId && users.find((u) => u.id === deletingUserId)?.photoCount
+                ? `该用户有 ${users.find((u) => u.id === deletingUserId)?.photoCount} 张照片，请选择如何处理这些照片：`
+                : "确认删除该用户？"}
+            </DialogDescription>
+          </DialogHeader>
+          {deletingUserId && users.find((u) => u.id === deletingUserId)?.photoCount ? (
+            <RadioGroup
+              value={deletePhotosDirectly ? "delete" : deleteTransferUserId ? "transfer" : ""}
+              onValueChange={(value) => {
+                if (value === "delete") {
+                  setDeletePhotosDirectly(true);
+                  setDeleteTransferUserId(null);
+                } else {
+                  setDeletePhotosDirectly(false);
+                }
+              }}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="delete" id="delete-photos" />
+                <Label htmlFor="delete-photos">直接删除所有照片</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="transfer" id="transfer-photos" />
+                <Label htmlFor="transfer-photos">转移到其他用户</Label>
+              </div>
+            </RadioGroup>
+          ) : null}
+          {deletingUserId && !deletePhotosDirectly && users.find((u) => u.id === deletingUserId)?.photoCount ? (
+            <div className="space-y-2">
+              <Label htmlFor="transfer-user">选择目标用户</Label>
+              <Select
+                value={deleteTransferUserId?.toString() ?? ""}
+                onValueChange={(value) => setDeleteTransferUserId(Number(value))}
+              >
+                <SelectTrigger id="transfer-user">
+                  <SelectValue placeholder="选择用户" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeUsers
+                    .filter((u) => u.id !== deletingUserId)
+                    .map((user) => (
+                      <SelectItem key={user.id} value={String(user.id)}>
+                        {user.username}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDeletingUserId(null);
+                setDeleteTransferUserId(null);
+                setDeletePhotosDirectly(false);
+              }}
+            >
+              取消
+            </Button>
+            <Button variant="destructive" onClick={handleUserDelete}>
+              确认删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={resettingPasswordUserId !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResettingPasswordUserId(null);
+            setNewPassword("");
+            setConfirmNewPassword("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>重置密码</DialogTitle>
+            <DialogDescription>
+              为用户 <strong>{users.find((u) => u.id === resettingPasswordUserId)?.username}</strong> 设置新密码
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">新密码</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="至少 6 位"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">确认新密码</Label>
+              <Input
+                id="confirm-new-password"
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="再次输入新密码"
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setResettingPasswordUserId(null);
+                setNewPassword("");
+                setConfirmNewPassword("");
+              }}
+            >
+              取消
+            </Button>
+            <Button variant="default" onClick={handlePasswordReset}>
+              确认重置
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

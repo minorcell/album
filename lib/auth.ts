@@ -37,6 +37,15 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // 检查账户状态
+        if (user.status === "pending") {
+          throw new Error("账户待审核，请等待管理员通过");
+        }
+
+        if (user.status === "rejected") {
+          throw new Error("账户已被拒绝，无法登录");
+        }
+
         return {
           id: String(user.id),
           name: user.username,

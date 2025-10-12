@@ -18,6 +18,10 @@ const shareAccessSchema = z.object({
   password: z.string().optional(),
 });
 
+const deleteShareSchema = z.object({
+  id: z.number().int(),
+});
+
 export async function POST(request: Request) {
   const adminCheck = await requireAdmin();
   if ("error" in adminCheck) return adminCheck.error;
@@ -137,4 +141,36 @@ export async function GET(request: Request) {
       })),
     },
   });
+}
+
+export async function DELETE(request: Request) {
+  const adminCheck = await requireAdmin();
+  if ("error" in adminCheck) return adminCheck.error;
+
+  const body = await request.json().catch(() => null);
+  const parsed = deleteShareSchema.safeParse(body);
+
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors;
+    const errorMessage = Object.values(errors).flat()[0] || "请求参数错误";
+    return NextResponse.json({ error: errorMessage }, { status: 400 });
+  }
+
+  const { id } = parsed.data;
+
+  // 检查分享链接是否存在
+  const shareLink = await prisma.shareLink.findUnique({
+    where: { id },
+  });
+
+  if (!shareLink) {
+    return NextResponse.json({ error: "分享链接不存在" }, { status: 404 });
+  }
+
+  // 删除分享链接
+  await prisma.shareLink.delete({
+    where: { id },
+  });
+
+  return NextResponse.json({ success: true });
 }

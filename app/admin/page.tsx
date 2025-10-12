@@ -43,6 +43,7 @@ export default async function AdminPage() {
         id: user.id,
         username: user.username,
         role: user.role,
+        status: user.status,
         photoCount: user._count.photos,
         createdAt: user.createdAt.toISOString(),
       }))}

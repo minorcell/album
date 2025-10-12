@@ -176,12 +176,12 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
             id="files"
             type="file"
             multiple
-            accept="image/png,image/jpeg"
+            accept="image/png,image/jpeg,image/gif,image/webp"
             className="hidden"
             onChange={handleSelectFiles}
           />
           <p className="text-sm font-medium">点击或拖拽文件到此处</p>
-          <p className="text-xs text-muted-foreground">支持 JPG / PNG，单个文件不超过 10MB。</p>
+          <p className="text-xs text-muted-foreground">支持 JPG / PNG / GIF / WebP，单个文件不超过 10MB。</p>
           {files && files.length > 0 && (
             <p className="mt-2 text-sm text-muted-foreground">
               已选择 {files.length} 个文件

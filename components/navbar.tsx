@@ -109,6 +109,11 @@ function NavbarLinks({
           </Link>
         </Wrapper>
       )}
+      <Wrapper>
+        <Link className={baseClass} href="/help">
+          帮助
+        </Link>
+      </Wrapper>
     </>
   )
 }
