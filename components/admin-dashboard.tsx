@@ -501,11 +501,11 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>用户名</TableHead>
-                    <TableHead>角色</TableHead>
-                    <TableHead>上传数</TableHead>
-                    <TableHead>创建时间</TableHead>
-                    <TableHead className="w-60">操作</TableHead>
+                    <TableHead className="min-w-[180px]">用户名</TableHead>
+                    <TableHead className="min-w-[170px]">角色</TableHead>
+                    <TableHead className="min-w-[170px]">上传数</TableHead>
+                    <TableHead className="min-w-[180px]">创建时间</TableHead>
+                    <TableHead className="min-w-[380px]">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -517,45 +517,50 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
                       </TableCell>
                       <TableCell>{user.photoCount}</TableCell>
                       <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
-                      <TableCell className="flex flex-wrap items-center gap-2">
-                        <Select
-                          value={selectedUserRole[user.id] ?? user.role}
-                          onValueChange={(value) =>
-                            setSelectedUserRole((prev) => ({
-                              ...prev,
-                              [user.id]: value,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="选择角色" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">管理员</SelectItem>
-                            <SelectItem value="member">成员</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUserRoleChange(user.id, selectedUserRole[user.id] ?? user.role)}
-                        >
-                          保存
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setResettingPasswordUserId(user.id)}
-                        >
-                          重置密码
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => setDeletingUserId(user.id)}
-                        >
-                          删除
-                        </Button>
+                      <TableCell className="p-0">
+                        <div className="flex items-center gap-2 px-4 py-3">
+                          <Select
+                            value={selectedUserRole[user.id] ?? user.role}
+                            onValueChange={(value) =>
+                              setSelectedUserRole((prev) => ({
+                                ...prev,
+                                [user.id]: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-8 w-[90px]">
+                              <SelectValue placeholder="角色" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">管理员</SelectItem>
+                              <SelectItem value="member">成员</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => handleUserRoleChange(user.id, selectedUserRole[user.id] ?? user.role)}
+                          >
+                            保存
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => setResettingPasswordUserId(user.id)}
+                          >
+                            重置
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => setDeletingUserId(user.id)}
+                          >
+                            删除
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
