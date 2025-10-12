@@ -22,7 +22,7 @@ interface PhotoItem {
   description: string | null;
   createdAt: string;
   uploader: string;
-  thumbnail: string;
+  thumbnailUrl: string;
   fileUrl: string;
   isOwner: boolean;
 }
@@ -534,7 +534,7 @@ export function PhotoGrid({
                       ) : null}
                       <div className="relative aspect-square w-full">
                         <Image
-                          src={`/uploads/${photo.thumbnail}`}
+                          src={photo.thumbnailUrl}
                           alt={photo.description ?? photo.filename}
                           fill
                           sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
@@ -606,7 +606,7 @@ export function PhotoGrid({
                             ) : null}
                             <div className="relative h-16 w-24 overflow-hidden rounded-md border">
                               <Image
-                                src={`/uploads/${photo.thumbnail}`}
+                                src={photo.thumbnailUrl}
                                 alt={photo.description ?? photo.filename}
                                 fill
                                 sizes="120px"

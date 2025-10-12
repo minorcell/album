@@ -21,7 +21,8 @@ interface UploadedPhoto {
   id: number;
   filename: string;
   description: string | null;
-  thumbnail: string;
+  thumbnailUrl: string;
+  fileUrl: string;
 }
 
 export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadFormProps) {
@@ -233,11 +234,12 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
             {uploaded.map((photo) => (
               <div key={photo.id} className="overflow-hidden rounded-lg border">
                 <Image
-                  src={`/uploads/${photo.thumbnail}`}
+                  src={photo.thumbnailUrl}
                   alt={photo.description ?? photo.filename}
                   width={300}
                   height={200}
                   className="h-32 w-full object-cover"
+                  unoptimized
                 />
                 <div className="px-3 py-2 text-xs text-muted-foreground">
                   {photo.description ?? "无描述"}

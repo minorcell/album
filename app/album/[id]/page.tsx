@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { PhotoGrid } from "@/components/photo-grid";
 import { UploadDialog } from "@/components/upload-dialog";
+import { getPublicObjectUrl, getPublicThumbnailUrl } from "@/lib/storage";
 import { Images, CalendarClock, CalendarDays, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -75,8 +76,8 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     description: photo.description,
     createdAt: photo.createdAt.toISOString(),
     uploader: photo.uploader.username,
-    thumbnail: `thumbnails/thumb-${photo.filename}`,
-    fileUrl: `/uploads/${photo.filename}`,
+    thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+    fileUrl: getPublicObjectUrl(photo.filename),
     isOwner: viewerId !== null && photo.uploaderId === viewerId,
   }));
 

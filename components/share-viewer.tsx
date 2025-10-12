@@ -26,7 +26,8 @@ interface ShareResponse {
       description: string | null;
       createdAt: string;
       uploader: string;
-      thumbnail: string;
+      thumbnailUrl: string;
+      fileUrl: string;
     }>;
   };
 }
@@ -127,8 +128,8 @@ export function ShareViewer({ token }: ShareViewerProps) {
     description: photo.description,
     createdAt: photo.createdAt,
     uploader: photo.uploader,
-    thumbnail: photo.thumbnail,
-    fileUrl: `/uploads/${photo.filename}`,
+    thumbnailUrl: photo.thumbnailUrl,
+    fileUrl: photo.fileUrl,
     isOwner: false,
   }));
 

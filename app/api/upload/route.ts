@@ -3,7 +3,13 @@ import { z } from "zod";
 
 import { requireAuth } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
-import { persistImage, UploadError } from "@/lib/storage";
+import {
+  ConfigurationError,
+  getPublicObjectUrl,
+  getPublicThumbnailUrl,
+  persistImage,
+  UploadError,
+} from "@/lib/storage";
 
 const uploadSchema = z.object({
   categoryId: z.coerce.number().int().positive(),
@@ -51,7 +57,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { filename, originalName, thumbnailRelPath } = await persistImage(file);
+    const { filename, originalName } = await persistImage(file);
 
     const photo = await prisma.photo.create({
       data: {
@@ -74,11 +80,16 @@ export async function POST(request: Request) {
       categoryId: photo.categoryId,
       uploader: photo.uploader.username,
       createdAt: photo.createdAt,
-      thumbnail: thumbnailRelPath,
+      fileUrl: getPublicObjectUrl(photo.filename),
+      thumbnailUrl: getPublicThumbnailUrl(photo.filename),
     });
   } catch (error) {
     if (error instanceof UploadError) {
       return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+    if (error instanceof ConfigurationError) {
+      console.error(error);
+      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
     }
     console.error(error);
     return NextResponse.json({ error: "上传失败" }, { status: 500 });

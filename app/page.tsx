@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { UploadDialog } from "@/components/upload-dialog"
 import { Images } from "lucide-react"
 import { auth } from "@/lib/auth"
+import { getPublicThumbnailUrl } from "@/lib/storage"
 
 export default async function HomePage() {
   const session = await auth()
@@ -102,12 +103,13 @@ function ImageFill({ filename }: { filename: string }) {
   return (
     <div className="relative h-full w-full">
       <Image
-        src={`/uploads/thumbnails/thumb-${filename}`}
+        src={getPublicThumbnailUrl(filename)}
         alt="分类封面"
         fill
         priority={false}
         sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
         className="object-cover"
+        unoptimized
       />
     </div>
   )

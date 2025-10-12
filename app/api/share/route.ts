@@ -6,6 +6,11 @@ import { addHours, isAfter } from "date-fns";
 
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
+import {
+  ConfigurationError,
+  getPublicObjectUrl,
+  getPublicThumbnailUrl,
+} from "@/lib/storage";
 
 const createShareSchema = z.object({
   categoryId: z.number().int(),
@@ -123,24 +128,33 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({
-    token: shareLink.token,
-    expiresAt: shareLink.expiresAt?.toISOString() ?? null,
-    category: {
-      id: shareLink.category.id,
-      name: shareLink.category.name,
-      description: shareLink.category.description,
-      photos: shareLink.category.photos.map((photo) => ({
-        id: photo.id,
-        filename: photo.filename,
-        originalName: photo.originalName,
-        description: photo.description,
-        createdAt: photo.createdAt.toISOString(),
-        uploader: photo.uploader.username,
-        thumbnail: `thumbnails/thumb-${photo.filename}`,
-      })),
-    },
-  });
+  try {
+    return NextResponse.json({
+      token: shareLink.token,
+      expiresAt: shareLink.expiresAt?.toISOString() ?? null,
+      category: {
+        id: shareLink.category.id,
+        name: shareLink.category.name,
+        description: shareLink.category.description,
+        photos: shareLink.category.photos.map((photo) => ({
+          id: photo.id,
+          filename: photo.filename,
+          originalName: photo.originalName,
+          description: photo.description,
+          createdAt: photo.createdAt.toISOString(),
+          uploader: photo.uploader.username,
+          fileUrl: getPublicObjectUrl(photo.filename),
+          thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+        })),
+      },
+    });
+  } catch (error) {
+    if (error instanceof ConfigurationError) {
+      console.error(error);
+      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+    }
+    throw error;
+  }
 }
 
 export async function DELETE(request: Request) {

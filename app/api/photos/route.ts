@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import path from "path";
-import fs from "fs/promises";
 import JSZip from "jszip";
 
 import { Prisma, CategoryVisibility } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-guards";
 import { auth } from "@/lib/auth";
+import {
+  ConfigurationError,
+  deleteImageAssets,
+  getOriginalBuffer,
+  getPublicObjectUrl,
+  getPublicThumbnailUrl,
+  isNotFoundError,
+} from "@/lib/storage";
 
 const idArraySchema = z.array(z.number().int().positive()).min(1);
 
@@ -27,9 +33,6 @@ const renameSchema = z.object({
     .transform((value) => value.trim())
     .optional(),
 });
-
-const uploadRoot = path.resolve(process.cwd(), process.env.UPLOAD_PATH ?? "./public/uploads");
-const thumbnailRoot = path.join(uploadRoot, "thumbnails");
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -71,23 +74,32 @@ export async function GET(request: Request) {
 
   const total = await prisma.photo.count({ where });
 
-  return NextResponse.json({
-    data: photos.map((photo) => ({
-      id: photo.id,
-      filename: photo.filename,
-      originalName: photo.originalName,
-      description: photo.description,
-      createdAt: photo.createdAt,
-      uploader: photo.uploader.username,
-      category: photo.category.name,
-      thumbnail: `thumbnails/thumb-${photo.filename}`,
-    })),
-    meta: {
-      page,
-      pageSize,
-      total,
-    },
-  });
+  try {
+    return NextResponse.json({
+      data: photos.map((photo) => ({
+        id: photo.id,
+        filename: photo.filename,
+        originalName: photo.originalName,
+        description: photo.description,
+        createdAt: photo.createdAt,
+        uploader: photo.uploader.username,
+        category: photo.category.name,
+        fileUrl: getPublicObjectUrl(photo.filename),
+        thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+      })),
+      meta: {
+        page,
+        pageSize,
+        total,
+      },
+    });
+  } catch (error) {
+    if (error instanceof ConfigurationError) {
+      console.error(error);
+      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+    }
+    throw error;
+  }
 }
 
 export async function POST(request: Request) {
@@ -115,19 +127,27 @@ export async function POST(request: Request) {
 
   const zip = new JSZip();
   let addedCount = 0;
-  for (const photo of photos) {
-    const filePath = path.join(uploadRoot, photo.filename);
-    try {
-      const fileBuffer = await fs.readFile(filePath);
-      const name = photo.originalName || photo.filename;
-      zip.file(name, fileBuffer);
-      addedCount += 1;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException)?.code === "ENOENT") {
-        continue;
+
+  try {
+    for (const photo of photos) {
+      try {
+        const fileBuffer = await getOriginalBuffer(photo.filename);
+        const name = photo.originalName || photo.filename;
+        zip.file(name, fileBuffer);
+        addedCount += 1;
+      } catch (error) {
+        if (isNotFoundError(error)) {
+          continue;
+        }
+        throw error;
       }
-      throw error;
     }
+  } catch (error) {
+    if (error instanceof ConfigurationError) {
+      console.error(error);
+      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+    }
+    throw error;
   }
 
   if (addedCount === 0) {
@@ -181,15 +201,15 @@ export async function DELETE(request: Request) {
 
   await prisma.photo.deleteMany({ where: { id: { in: targetPhotos.map((photo) => photo.id) } } });
 
-  await Promise.all(
-    targetPhotos.map(async (photo) => {
-      const filePath = path.join(uploadRoot, photo.filename);
-      const thumbPath = path.join(thumbnailRoot, `thumb-${photo.filename}`);
-
-      await removeIfExists(filePath);
-      await removeIfExists(thumbPath);
-    }),
-  );
+  try {
+    await Promise.all(targetPhotos.map((photo) => deleteImageAssets(photo.filename)));
+  } catch (error) {
+    if (error instanceof ConfigurationError) {
+      console.error(error);
+      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+    }
+    throw error;
+  }
 
   return NextResponse.json({ deleted: targetPhotos.length });
 }
@@ -248,14 +268,4 @@ export async function PATCH(request: Request) {
     uploader: updated.uploader.username,
     category: updated.category.name,
   });
-}
-
-async function removeIfExists(targetPath: string) {
-  try {
-    await fs.unlink(targetPath);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException)?.code !== "ENOENT") {
-      console.error("Failed to remove file", targetPath, error);
-    }
-  }
 }
