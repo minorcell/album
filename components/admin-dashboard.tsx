@@ -190,7 +190,9 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
       const res = await fetch(`/api/users?${params.toString()}`);
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error ?? "加载失败");
-      const list: UserItem[] = (body.data ?? []).filter((u: any) => u.status === "active");
+      const list: UserItem[] = (body.data ?? []).filter((u: unknown): u is UserItem => {
+        return !!u && typeof (u as UserItem).status === "string" && (u as UserItem).status === "active";
+      });
       setActiveUsers(list);
       setUserTotal(body.meta?.total ?? list.length);
     } catch (e) {

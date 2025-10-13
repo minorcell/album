@@ -1,26 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Orbitron } from "next/font/google";
 import "./globals.css";
 
 import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const brandFont = Orbitron({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-brand",
-});
 
 export const metadata: Metadata = {
   title: "CODEPAINT STUDIO ALBUM",
@@ -38,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${brandFont.variable} min-h-screen bg-background font-sans antialiased`}
+        className={`min-h-screen bg-background font-sans antialiased`}
       >
         <Providers>
           <div className="flex min-h-screen flex-col">

@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 
 import { requireAdmin } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 
 const createUserSchema = z.object({
   username: z.string().min(3, "用户名至少 3 位"),
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
   const page = Math.max(Number.parseInt(pageParam, 10) || 1, 1);
   const pageSize = Math.min(Math.max(Number.parseInt(pageSizeParam, 10) || 20, 1), 100);
 
-  const where: Parameters<typeof prisma.user.findMany>[0]["where"] = {
+  const where: Prisma.UserWhereInput = {
     ...(q ? { username: { contains: q } } : {}),
     ...(roleParam === "admin" || roleParam === "member" ? { role: roleParam as "admin" | "member" } : {}),
     ...(statusParam === "pending" || statusParam === "active" || statusParam === "rejected"

@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Search } from "lucide-react";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
@@ -18,22 +18,29 @@ interface SearchDialogProps {
 }
 
 export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogProps) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [results, setResults] = useState<{
-    categories: Array<{ id: number; name: string; description: string | null; photoCount: number }>;
-    photos: Array<{
-      id: number;
-      categoryId: number;
-      categoryName: string;
-      filename: string;
-      originalName: string | null;
-      description: string | null;
-      thumbnailUrl: string;
-    }>;
-  }>({ categories: [], photos: [] });
+  interface CategoryResult {
+    id: number;
+    name: string;
+    description: string | null;
+    photoCount: number;
+  }
+
+  interface PhotoResult {
+    id: number;
+    categoryId: number;
+    categoryName: string;
+    filename: string;
+    originalName: string | null;
+    description: string | null;
+    thumbnailUrl: string;
+  }
+
+  const [results, setResults] = useState<{ categories: CategoryResult[]; photos: PhotoResult[] }>({ categories: [], photos: [] });
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(query.trim()), 250);
@@ -60,19 +67,25 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
         }
         return res.json();
       })
-      .then((data) => {
-        setResults({
-          categories: data.categories.map((c: any) => ({ id: c.id, name: c.name, description: c.description, photoCount: c.photoCount })),
-          photos: data.photos.map((p: any) => ({
-            id: p.id,
-            categoryId: p.categoryId,
-            categoryName: p.categoryName,
-            filename: p.filename,
-            originalName: p.originalName,
-            description: p.description,
-            thumbnailUrl: p.thumbnailUrl,
-          })),
-        });
+      .then((data: { categories: CategoryResult[]; photos: PhotoResult[] }) => {
+        const normalizedCategories: CategoryResult[] = (data.categories ?? []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description,
+          photoCount: c.photoCount,
+        }));
+
+        const normalizedPhotos: PhotoResult[] = (data.photos ?? []).map((p) => ({
+          id: p.id,
+          categoryId: p.categoryId,
+          categoryName: p.categoryName,
+          filename: p.filename,
+          originalName: p.originalName,
+          description: p.description,
+          thumbnailUrl: p.thumbnailUrl,
+        }));
+
+        setResults({ categories: normalizedCategories, photos: normalizedPhotos });
       })
       .catch((err) => setError(err instanceof Error ? err.message : "搜索失败"))
       .finally(() => setLoading(false));
@@ -142,21 +155,30 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
                 </TableHeader>
                 <TableBody>
                   {results.photos.map((p) => (
-                    <TableRow key={p.id} className="cursor-pointer" asChild>
-                      <Link href={`/album/${p.categoryId}`}>
-                        <TableCell>
-                          <div className="relative h-16 w-24 overflow-hidden rounded">
-                            <Image src={p.thumbnailUrl} alt={p.description ?? p.filename} fill sizes="96px" className="object-cover" unoptimized />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          <div className="max-w-lg">
-                            <p className="font-medium">{p.description || p.originalName || p.filename}</p>
-                            <p className="text-xs text-muted-foreground">文件：{p.originalName ?? p.filename}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{p.categoryName}</TableCell>
-                      </Link>
+                    <TableRow
+                      key={p.id}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/album/${p.categoryId}`)}
+                    >
+                      <TableCell>
+                        <div className="relative h-16 w-24 overflow-hidden rounded">
+                          <Image
+                            src={p.thumbnailUrl}
+                            alt={p.description ?? p.filename}
+                            fill
+                            sizes="96px"
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <div className="max-w-lg">
+                          <p className="font-medium">{p.description || p.originalName || p.filename}</p>
+                          <p className="text-xs text-muted-foreground">文件：{p.originalName ?? p.filename}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{p.categoryName}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
