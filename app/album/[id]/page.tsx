@@ -9,9 +9,13 @@ import { Images, CalendarClock, CalendarDays, Image as ImageIcon } from "lucide-
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { CategoryVisibility } from "@prisma/client";
+import { SearchTrigger } from "@/components/search-trigger";
+import { SortToggle } from "@/components/sort-toggle";
 
-export default async function AlbumPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AlbumPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const { id } = await params;
+  const q = (await searchParams) ?? {};
+  const sort = (typeof q["sort"] === "string" ? q["sort"] : undefined) === "asc" ? "asc" : "desc";
   const categoryId = Number.parseInt(id, 10);
   if (!Number.isInteger(categoryId)) {
     notFound();
@@ -23,7 +27,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     where: { id: categoryId },
     include: {
       photos: {
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: sort },
         include: {
           uploader: { select: { username: true } },
         },
@@ -109,6 +113,9 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
             </span>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <SearchTrigger categoryId={category.id} />
+          <SortToggle />
         {session?.user ? (
           <UploadDialog
             categories={uploadCategories}
@@ -118,6 +125,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
             triggerLabel="上传照片"
           />
         ) : null}
+        </div>
       </div>
 
       {photos.length === 0 ? (
@@ -135,3 +143,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ id: stri
     </div>
   );
 }
+
+// client-only search trigger moved to components/search-trigger.tsx
+
+// client-only search trigger moved to components/search-trigger.tsx

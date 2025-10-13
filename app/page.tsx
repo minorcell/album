@@ -8,8 +8,12 @@ import { UploadDialog } from "@/components/upload-dialog"
 import { Images } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { getPublicThumbnailUrl } from "@/lib/storage"
+import { SearchTrigger } from "@/components/search-trigger"
+import { SortToggle } from "@/components/sort-toggle"
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const params = (await searchParams) ?? {};
+  const sort = (typeof params["sort"] === "string" ? params["sort"] : undefined) === "asc" ? "asc" : "desc";
   const session = await auth()
   const internalVisibilities: CategoryVisibility[] = ["internal", "public"]
   const where: Prisma.CategoryWhereInput = !session?.user
@@ -20,11 +24,11 @@ export default async function HomePage() {
 
   const categories = await prisma.category.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: sort },
     include: {
       _count: { select: { photos: true } },
       photos: {
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: sort },
         take: 1,
         select: {
           filename: true,
@@ -45,6 +49,10 @@ export default async function HomePage() {
           <p className="text-sm text-muted-foreground">
             浏览工作室成员上传的活动照片与证书。
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <SearchTrigger />
+          <SortToggle />
         </div>
         {session?.user && categories.length > 0 && (
           <div className="flex items-center gap-2">
@@ -123,3 +131,6 @@ function EmptyState() {
     </div>
   )
 }
+
+// client-only search trigger moved to components/search-trigger.tsx
+// client-only search trigger moved to components/search-trigger.tsx

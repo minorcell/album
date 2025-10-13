@@ -16,6 +16,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [pendingHint, setPendingHint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -23,6 +24,20 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
     setError(null);
     setIsLoading(true);
     try {
+      setPendingHint(null);
+      // 先检查账户状态，避免不必要的登录尝试
+      const check = await fetch("/api/users/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      }).then((r) => r.json()).catch(() => ({}));
+
+      if (check?.status === "pending") {
+        setPendingHint("账户待审核，请等待管理员通过");
+        setIsLoading(false);
+        return;
+      }
+
       const response = await signIn("credentials", {
         username,
         password,
@@ -31,7 +46,12 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       });
 
       if (response?.error) {
-        setError("用户名或密码错误");
+        if (response.error.includes("待审核") || response.error.includes("审核")) {
+          setError(null);
+          setPendingHint("账户待审核，请等待管理员通过");
+        } else {
+          setError("用户名或密码错误");
+        }
         setIsLoading(false);
         return;
       }
@@ -72,6 +92,12 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
         <Alert variant="destructive">
           <AlertTitle>登录失败</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {pendingHint && (
+        <Alert>
+          <AlertTitle>登录受限</AlertTitle>
+          <AlertDescription>{pendingHint}</AlertDescription>
         </Alert>
       )}
       <LoadingButton type="submit" className="w-full" loading={isLoading}>

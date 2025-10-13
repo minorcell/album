@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,7 +56,8 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
   const [error, setError] = useState<string | null>(null);
 
   const pendingUsers = users.filter((u) => u.status === "pending");
-  const activeUsers = users.filter((u) => u.status === "active");
+  const activeUsersInitial = users.filter((u) => u.status === "active");
+  const [activeUsers, setActiveUsers] = useState<UserItem[]>(activeUsersInitial);
 
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState("");
@@ -64,6 +65,13 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
   const [categoryVisibility, setCategoryVisibility] = useState<CategoryVisibility>("internal");
 
   const [selectedUserRole, setSelectedUserRole] = useState<Record<number, string>>({});
+  const [userQuery, setUserQuery] = useState("");
+  const [userPage, setUserPage] = useState(1);
+  const [userPageSize, setUserPageSize] = useState(20);
+  const [userTotal, setUserTotal] = useState<number>(activeUsersInitial.length);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [filterRole, setFilterRole] = useState<string>("");
 
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [deleteTransferUserId, setDeleteTransferUserId] = useState<number | null>(null);
@@ -170,6 +178,32 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
 
     startTransition(() => router.refresh());
   };
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const params = new URLSearchParams({ page: String(userPage), pageSize: String(userPageSize) });
+      if (userQuery.trim()) params.set("q", userQuery.trim());
+      if (filterRole) params.set("role", filterRole);
+      params.set("status", "active");
+      const res = await fetch(`/api/users?${params.toString()}`);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error ?? "加载失败");
+      const list: UserItem[] = (body.data ?? []).filter((u: any) => u.status === "active");
+      setActiveUsers(list);
+      setUserTotal(body.meta?.total ?? list.length);
+    } catch (e) {
+      setUsersError(e instanceof Error ? e.message : "加载失败");
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userPage, userPageSize]);
 
   const handleUserStatusChange = async (id: number, status: "pending" | "active" | "rejected") => {
     setError(null);
@@ -497,6 +531,42 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
 
           <div className="space-y-2">
             <h3 className="text-lg font-medium">已激活成员</h3>
+            <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="搜索用户名"
+                  value={userQuery}
+                  onChange={(e) => setUserQuery(e.target.value)}
+                  className="w-64"
+                />
+                <Select
+                  value={filterRole || "__all__"}
+                  onValueChange={(v) => setFilterRole(v === "__all__" ? "" : v)}
+                >
+                  <SelectTrigger className="h-8 w-[140px]"><SelectValue placeholder="角色筛选" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">全部角色</SelectItem>
+                    <SelectItem value="admin">管理员</SelectItem>
+                    <SelectItem value="member">成员</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={() => { setUserPage(1); fetchUsers(); }}>
+                  搜索
+                </Button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-muted-foreground">每页</label>
+                <Select value={String(userPageSize)} onValueChange={(v) => setUserPageSize(Number(v))}>
+                  <SelectTrigger className="h-8 w-[100px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="text-sm text-muted-foreground">共 {userTotal} 条</div>
+              </div>
+            </div>
             <div className="overflow-hidden rounded-lg border">
               <Table>
                 <TableHeader>
@@ -567,6 +637,25 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
                 </TableBody>
               </Table>
             </div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground">第 {userPage} 页 / 共 {Math.max(1, Math.ceil(userTotal / userPageSize))} 页</div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" disabled={userPage <= 1} onClick={() => setUserPage((p) => Math.max(p - 1, 1))}>上一页</Button>
+                <Button variant="ghost" size="sm" disabled={userPage * userPageSize >= userTotal} onClick={() => setUserPage((p) => p + 1)}>下一页</Button>
+              </div>
+            </div>
+            {usersLoading && (
+              <Alert>
+                <AlertTitle>加载中</AlertTitle>
+                <AlertDescription>正在加载成员列表...</AlertDescription>
+              </Alert>
+            )}
+            {usersError && (
+              <Alert variant="destructive">
+                <AlertTitle>加载失败</AlertTitle>
+                <AlertDescription>{usersError}</AlertDescription>
+              </Alert>
+            )}
           </div>
         </TabsContent>
 

@@ -1,3 +1,4 @@
+import "server-only";
 import { randomUUID } from "crypto";
 import sharp from "sharp";
 import { TosClient, TosServerCode, TosServerError } from "@volcengine/tos-sdk";
@@ -51,26 +52,29 @@ export async function persistImage(file: File) {
   const filename = `${Date.now()}-${randomUUID()}${extension}`;
   const objectKey = buildObjectKey(filename, config);
 
-  await client.putObject({
+  const originalUpload = client.putObject({
     bucket: config.bucket,
     key: objectKey,
     body: buffer,
     contentType: file.type,
   });
 
-  const { data: thumbnailBuffer, info: thumbnailInfo } = await sharp(buffer)
-    .resize(400, 400, { fit: "inside", withoutEnlargement: true })
+  const { data: thumbnailBuffer } = await sharp(buffer, { sequentialRead: true })
+    .resize(400, 400, { fit: "inside", withoutEnlargement: true, fastShrinkOnLoad: true })
+    .webp({ quality: 80 })
     .toBuffer({ resolveWithObject: true });
 
   const thumbnailKey = buildThumbnailKey(filename, config);
-  const thumbnailMime = mapSharpFormatToMime(thumbnailInfo.format) ?? file.type;
 
-  await client.putObject({
-    bucket: config.bucket,
-    key: thumbnailKey,
-    body: thumbnailBuffer,
-    contentType: thumbnailMime,
-  });
+  await Promise.all([
+    originalUpload,
+    client.putObject({
+      bucket: config.bucket,
+      key: thumbnailKey,
+      body: thumbnailBuffer,
+      contentType: "image/webp",
+    }),
+  ]);
 
   return {
     filename,

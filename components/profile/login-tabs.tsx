@@ -21,7 +21,7 @@ export function LoginTabs() {
           <LoginForm onSuccess={() => setValue("login")} />
         </TabsContent>
         <TabsContent value="register">
-          <RegisterForm onSuccess={() => setValue("login")} />
+          <RegisterForm />
         </TabsContent>
       </Tabs>
     </FormsProvider>

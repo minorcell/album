@@ -17,6 +17,11 @@ const links = [
     href: "https://github.com/codepaintstudio",
     icon: Github,
   },
+  {
+    label: "项目地址",
+    href: "https://github.com/codepaintstudio/cp-album",
+    icon: Github,
+  },
 ];
 
 export function Footer() {

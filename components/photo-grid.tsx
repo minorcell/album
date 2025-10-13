@@ -14,6 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PhotoItem {
   id: number;
@@ -264,6 +270,12 @@ export function PhotoGrid({
     },
     [selectionMode, toggleSelection],
   );
+
+  const handleCopyLink = useCallback((photo: PhotoItem) => {
+    navigator.clipboard
+      .writeText(photo.fileUrl)
+      .catch(() => setActionError("复制失败，请手动复制"));
+  }, []);
 
   const handleZoomIn = useCallback(() => {
     setZoomLevel((prev) => {
@@ -541,6 +553,34 @@ export function PhotoGrid({
                           className="object-cover transition duration-200 group-hover:scale-105"
                           unoptimized
                         />
+                        <div className="absolute right-2 top-2 z-10">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="rounded-md bg-black/50 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                操作
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => {
+                                const link = document.createElement("a");
+                                link.href = photo.fileUrl;
+                                link.download = photo.originalName ?? photo.filename;
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                              }}>
+                                下载
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onSelect={() => handleCopyLink(photo)}>
+                                复制链接
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                       <div className={cn("space-y-1", cardPaddingClass)}>
                         {zoomLevel === "day" && (
@@ -613,6 +653,34 @@ export function PhotoGrid({
                                 className="object-cover"
                                 unoptimized
                               />
+                              <div className="absolute right-1 top-1 z-10">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="rounded bg-black/50 px-2 py-1 text-[10px] text-white"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      操作
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => {
+                                      const link = document.createElement("a");
+                                      link.href = photo.fileUrl;
+                                      link.download = photo.originalName ?? photo.filename;
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      link.remove();
+                                    }}>
+                                      下载
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => handleCopyLink(photo)}>
+                                      复制链接
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
                           </div>
                         </TableCell>

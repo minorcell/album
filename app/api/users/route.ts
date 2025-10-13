@@ -27,26 +27,50 @@ const deleteUserSchema = z.object({
   deletePhotos: z.boolean().optional(),
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const adminCheck = await requireAdmin();
   if ("error" in adminCheck) return adminCheck.error;
 
-  const users = await prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      username: true,
-      role: true,
-      status: true,
-      createdAt: true,
-      _count: {
-        select: { photos: true },
-      },
-    },
-  });
+  const { searchParams } = new URL(request.url);
+  const pageParam = searchParams.get("page") ?? "1";
+  const pageSizeParam = searchParams.get("pageSize") ?? "20";
+  const q = (searchParams.get("q") ?? "").trim();
+  const roleParam = (searchParams.get("role") ?? "").trim();
+  const statusParam = (searchParams.get("status") ?? "").trim();
 
-  return NextResponse.json(
-    users.map((user) => ({
+  const page = Math.max(Number.parseInt(pageParam, 10) || 1, 1);
+  const pageSize = Math.min(Math.max(Number.parseInt(pageSizeParam, 10) || 20, 1), 100);
+
+  const where: Parameters<typeof prisma.user.findMany>[0]["where"] = {
+    ...(q ? { username: { contains: q } } : {}),
+    ...(roleParam === "admin" || roleParam === "member" ? { role: roleParam as "admin" | "member" } : {}),
+    ...(statusParam === "pending" || statusParam === "active" || statusParam === "rejected"
+      ? { status: statusParam as "pending" | "active" | "rejected" }
+      : {}),
+  };
+
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        username: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        _count: {
+          select: { photos: true },
+        },
+      },
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return NextResponse.json({
+    data: users.map((user) => ({
       id: user.id,
       username: user.username,
       role: user.role,
@@ -54,7 +78,8 @@ export async function GET() {
       createdAt: user.createdAt,
       photoCount: user._count.photos,
     })),
-  );
+    meta: { page, pageSize, total },
+  });
 }
 
 export async function POST(request: Request) {
