@@ -3,6 +3,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { UserMenu } from "@/components/user-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Menu } from "lucide-react"
 import {
   Sheet,
@@ -32,6 +33,7 @@ export async function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {isAuthenticated ? (
             <UserMenu session={session!} />
           ) : (
