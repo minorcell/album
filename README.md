@@ -11,14 +11,6 @@
 - 批量下载：选择图片后打包为 ZIP
 - 管理后台与响应式界面
 
-## 技术栈
-
-- Next.js 15（App Router）
-- Prisma ORM + MySQL 8
-- NextAuth.js（Credentials Provider）
-- Tailwind CSS + shadcn/ui
-- sharp、pnpm、TypeScript、Zod
-
 ## 快速开始
 
 ### 环境要求
@@ -31,7 +23,6 @@
 
 - 安装依赖：`pnpm install`
 - 复制环境变量模板：`cp .env.example .env`
-- 修改 `.env`：至少配置 `DATABASE_URL`、`NEXTAUTH_SECRET`、`NEXTAUTH_URL`、`TOS_ACCESS_KEY_ID`、`TOS_SECRET_ACCESS_KEY`、`TOS_REGION`、`TOS_ENDPOINT`、`TOS_BUCKET`、`NEXT_PUBLIC_TOS_BASE_URL`，可选设置上传前缀。
 
 ### 启动开发
 
@@ -47,12 +38,3 @@
 ## 许可证
 
 本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件
-
-## 致谢
-
-- [Next.js](https://nextjs.org/) - React 框架
-- [Prisma](https://www.prisma.io/) - 数据库 ORM
-- [NextAuth.js](https://next-auth.js.org/) - 认证解决方案
-- [Tailwind CSS](https://tailwindcss.com/) - CSS 框架
-- [shadcn/ui](https://ui.shadcn.com/) - UI 组件库
-- [sharp](https://sharp.pixelplumbing.com/) - 图片处理库
