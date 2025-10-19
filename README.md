@@ -1,4 +1,4 @@
-# Studio Album
+# Album System
 
 基于 Next.js + Prisma + MySQL 的内部相册与证书管理系统。支持图片上传、分类浏览、权限控制和分享访问。
 
