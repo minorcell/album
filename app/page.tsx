@@ -47,7 +47,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
             <h1 className="text-2xl font-semibold tracking-tight">相册</h1>
           </div>
           <p className="text-sm text-muted-foreground">
-            浏览工作室成员上传的活动照片与证书。
+            查看你的相册集、上传照片。
           </p>
         </div>
         <div className="flex items-center gap-2">

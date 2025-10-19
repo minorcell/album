@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { Providers } from "@/components/providers";
+import { BRAND_FULL } from "@/lib/config";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 
 
 export const metadata: Metadata = {
-  title: "CODEPAINT STUDIO ALBUM",
+  title: BRAND_FULL,
   description: "内部相册平台 · 让创作与资料协同更高效",
   icons: {
     icon: "/favicon.ico",

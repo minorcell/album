@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { auth } from "@/lib/auth"
+import { BRAND_FULL } from "@/lib/config"
 import { Button } from "@/components/ui/button"
 import { UserMenu } from "@/components/user-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -25,7 +26,7 @@ export async function Navbar() {
           className="flex items-center gap-3 text-base font-semibold md:text-lg"
           style={{ fontFamily: "var(--font-brand)", letterSpacing: "0.3em" }}
         >
-          <span className="uppercase text-primary">CODEPAINT STUDIO ALBUM</span>
+          <span className="uppercase text-primary">{BRAND_FULL}</span>
         </Link>
 
         <nav className="hidden items-center gap-3 text-sm text-muted-foreground md:flex">

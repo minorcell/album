@@ -1,5 +1,6 @@
 import { BookOpen, Users, Image as ImageIcon, Shield, Upload, Eye, Share2, Settings } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BRAND_FULL } from "@/lib/config";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function HelpPage() {
@@ -11,7 +12,7 @@ export default function HelpPage() {
           <h1 className="text-2xl font-semibold tracking-tight">使用说明</h1>
         </div>
         <p className="text-sm text-muted-foreground">
-          欢迎使用 CODEPAINT STUDIO ALBUM，本页面介绍系统的基本使用方法。
+          欢迎使用 {BRAND_FULL}，本页面介绍系统的基本使用方法。
         </p>
       </div>
 
