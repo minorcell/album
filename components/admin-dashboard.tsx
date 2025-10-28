@@ -402,10 +402,10 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
 
       <Tabs defaultValue="categories">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="categories">相册管理</TabsTrigger>
-          <TabsTrigger value="filesets">文件管理</TabsTrigger>
-          <TabsTrigger value="users">成员管理</TabsTrigger>
-          <TabsTrigger value="share">分享链接</TabsTrigger>
+          <TabsTrigger value="categories">相册</TabsTrigger>
+          <TabsTrigger value="filesets">文件</TabsTrigger>
+          <TabsTrigger value="users">成员</TabsTrigger>
+          <TabsTrigger value="share">分享</TabsTrigger>
         </TabsList>
 
         <TabsContent value="categories" className="space-y-6">
