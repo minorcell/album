@@ -5,7 +5,7 @@ import { TosClient, TosServerCode, TosServerError } from "@volcengine/tos-sdk";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_GENERAL_FILE_SIZE = 100 * 1024 * 1024; // 100MB for general files
+const MAX_GENERAL_FILE_SIZE = 512 * 1024 * 1024; // 512MB for general files
 
 export class ConfigurationError extends Error {}
 
@@ -326,6 +326,71 @@ export async function getPresignedGetUrl(storageKey: string, attachmentName?: st
     },
   });
   return url;
+}
+
+/**
+ * Get a presigned GET url with inline content-disposition for general files.
+ * Useful for previewing PDFs in-browser without triggering download.
+ */
+export async function getPresignedInlineFileUrl(filename: string, originalName?: string, mime?: string) {
+  const config = getConfig();
+  const client = getClient();
+  const expires = config.presignExpiresSeconds ?? 900;
+  const key = buildFileObjectKey(filename, config);
+  const contentDisposition = originalName
+    ? `inline; filename="${originalName}"`
+    : "inline";
+  const url = client.getPreSignedUrl({
+    bucket: config.bucket,
+    key,
+    method: "GET",
+    expires,
+    response: {
+      contentDisposition,
+      contentType: mime || undefined,
+    },
+  });
+  return url;
+}
+
+export async function getPresignedInlineUrl(storageKey: string) {
+  const config = getConfig();
+  const client = getClient();
+  const expires = config.presignExpiresSeconds ?? 900;
+  const url = client.getPreSignedUrl({
+    bucket: config.bucket,
+    key: storageKey,
+    method: "GET",
+    expires,
+    response: {
+      contentDisposition: "inline",
+    },
+  });
+  return url;
+}
+
+/**
+ * Fetch general file bytes from storage by filename (under filesPrefix).
+ */
+export async function getFileBuffer(filename: string) {
+  const config = getConfig();
+  const key = buildFileObjectKey(filename, config);
+  return getObjectBuffer(key);
+}
+
+/**
+ * Best-effort MIME guess from filename extension for preview responses.
+ */
+export function guessMimeFromFilename(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.endsWith(".pdf")) return "application/pdf";
+  if (lower.endsWith(".png")) return "image/png";
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+  if (lower.endsWith(".gif")) return "image/gif";
+  if (lower.endsWith(".webp")) return "image/webp";
+  if (lower.endsWith(".txt")) return "text/plain";
+  if (lower.endsWith(".md")) return "text/markdown";
+  return "application/octet-stream";
 }
 
 function sanitizePrefix(input: string) {
