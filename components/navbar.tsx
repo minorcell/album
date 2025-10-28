@@ -94,6 +94,11 @@ function NavbarLinks({
   return (
     <>
       <Wrapper>
+        <Link className={baseClass} href="/files">
+          文件
+        </Link>
+      </Wrapper>
+      <Wrapper>
         <Link className={baseClass} href="/">
           相册
         </Link>

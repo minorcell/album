@@ -5,6 +5,7 @@ import { TosClient, TosServerCode, TosServerError } from "@volcengine/tos-sdk";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_GENERAL_FILE_SIZE = 100 * 1024 * 1024; // 100MB for general files
 
 export class ConfigurationError extends Error {}
 
@@ -16,7 +17,9 @@ interface StorageConfig {
   bucket: string;
   uploadPrefix: string;
   thumbnailPrefix: string;
+  filesPrefix: string;
   publicBaseUrl: string;
+  presignExpiresSeconds?: number;
 }
 
 let cachedConfig: StorageConfig | null = null;
@@ -138,6 +141,10 @@ function getConfig(): StorageConfig {
     process.env.TOS_THUMBNAIL_PREFIX ?? process.env.NEXT_PUBLIC_TOS_THUMBNAIL_PREFIX ?? `${uploadPrefix}thumbnails/`,
   );
 
+  const filesPrefix = sanitizePrefix(
+    process.env.TOS_FILES_PREFIX ?? process.env.NEXT_PUBLIC_TOS_FILES_PREFIX ?? "files/",
+  );
+
   const publicBaseUrl = sanitizeBaseUrl(
     process.env.NEXT_PUBLIC_TOS_BASE_URL ?? process.env.TOS_PUBLIC_BASE_URL ?? "",
   );
@@ -154,7 +161,9 @@ function getConfig(): StorageConfig {
     bucket,
     uploadPrefix,
     thumbnailPrefix,
+    filesPrefix,
     publicBaseUrl,
+    presignExpiresSeconds: Number(process.env.TOS_PRESIGN_EXPIRES ?? 900) || 900,
   };
 
   return cachedConfig;
@@ -199,6 +208,126 @@ function buildThumbnailKey(filename: string, config: StorageConfig) {
   return `${config.thumbnailPrefix}thumb-${filename}`;
 }
 
+// ========= General File Upload (flat structure) =========
+
+/**
+ * Upload any file type (not just images) to object storage
+ * Similar to persistImage but without thumbnail generation
+ */
+export async function persistFile(file: File) {
+  const config = getConfig();
+  const client = getClient();
+
+  if (file.size > MAX_GENERAL_FILE_SIZE) {
+    throw new UploadError(`文件大小超出限制 (${MAX_GENERAL_FILE_SIZE / 1024 / 1024}MB)`);
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  const originalName = file.name;
+  const extension = getExtensionFromFileName(file.name);
+  const filename = `${Date.now()}-${randomUUID()}${extension}`;
+  const objectKey = buildFileObjectKey(filename, config);
+
+  await client.putObject({
+    bucket: config.bucket,
+    key: objectKey,
+    body: buffer,
+    contentType: file.type || "application/octet-stream",
+  });
+
+  return {
+    filename,
+    originalName,
+  };
+}
+
+/**
+ * Delete a general file from storage
+ */
+export async function deleteFileAsset(filename: string) {
+  const config = getConfig();
+  const client = getClient();
+  const key = buildFileObjectKey(filename, config);
+
+  try {
+    await client.deleteObject({ bucket: config.bucket, key });
+  } catch (error) {
+    if (!isNotFoundError(error)) {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Get public URL for a general file
+ */
+export function getPublicFileUrl(filename: string) {
+  const config = getConfig();
+  return joinUrl(config.publicBaseUrl, buildFileObjectKey(filename, config));
+}
+
+/**
+ * Build object key for general files
+ */
+function buildFileObjectKey(filename: string, config: StorageConfig) {
+  return `${config.filesPrefix}${filename}`;
+}
+
+/**
+ * Get file extension from filename
+ */
+function getExtensionFromFileName(filename: string) {
+  const match = /\.([^.]+)$/u.exec(filename);
+  if (match?.[1]) {
+    return `.${match[1].toLowerCase()}`;
+  }
+  return "";
+}
+
+// ========= 直传/直下签名 =========
+export function buildFilesStorageKey(parts: { filesetId: number | string; fileId: number | string; name?: string }) {
+  const config = getConfig();
+  const base = `${config.filesPrefix}${parts.filesetId}/${parts.fileId}`;
+  return parts.name ? `${base}-${sanitizeName(parts.name)}` : base;
+}
+
+function sanitizeName(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+}
+
+export async function getPresignedPutUrl(storageKey: string, mime: string, size?: number) {
+  const config = getConfig();
+  const client = getClient();
+  const expires = config.presignExpiresSeconds ?? 900;
+  const url = client.getPreSignedUrl({
+    bucket: config.bucket,
+    key: storageKey,
+    method: "PUT",
+    expires,
+    response: { contentType: mime },
+  });
+  // 如果需要限制 content-length，可在前端 PUT 时设置；SDK 可能不支持 header 注入
+  return url;
+}
+
+export async function getPresignedGetUrl(storageKey: string, attachmentName?: string) {
+  const config = getConfig();
+  const client = getClient();
+  const expires = config.presignExpiresSeconds ?? 900;
+  const url = client.getPreSignedUrl({
+    bucket: config.bucket,
+    key: storageKey,
+    method: "GET",
+    expires,
+    response: {
+      contentDisposition: attachmentName ? `attachment; filename="${attachmentName}"` : undefined,
+    },
+  });
+  return url;
+}
+
 function sanitizePrefix(input: string) {
   const trimmed = input.trim();
   if (!trimmed) return "";
@@ -215,25 +344,6 @@ function joinUrl(base: string, path: string) {
   if (!base) return path;
   const normalizedPath = path.replace(/^\/+/, "");
   return `${base}/${normalizedPath}`;
-}
-
-function mapSharpFormatToMime(format?: string) {
-  switch (format) {
-    case "jpeg":
-      return "image/jpeg";
-    case "png":
-      return "image/png";
-    case "gif":
-      return "image/gif";
-    case "webp":
-      return "image/webp";
-    case "avif":
-      return "image/avif";
-    case "heif":
-      return "image/heif";
-    default:
-      return undefined;
-  }
 }
 
 function getExtensionFromFile(file: File) {

@@ -10,7 +10,7 @@ export default async function AdminPage() {
     redirect("/login?callbackUrl=/admin");
   }
 
-  const [categories, users, shareLinks] = await Promise.all([
+  const [categories, users, shareLinks, fileSets] = await Promise.all([
     prisma.category.findMany({
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { photos: true } } },
@@ -26,6 +26,10 @@ export default async function AdminPage() {
           select: { name: true },
         },
       },
+    }),
+    prisma.fileSet.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { files: true } } },
     }),
   ]);
 
@@ -54,6 +58,14 @@ export default async function AdminPage() {
         categoryName: link.category.name,
         expiresAt: link.expiresAt?.toISOString() ?? null,
         createdAt: link.createdAt.toISOString(),
+      }))}
+      fileSets={fileSets.map((fs) => ({
+        id: fs.id,
+        name: fs.name,
+        description: fs.description,
+        visibility: fs.visibility,
+        fileCount: fs._count.files,
+        createdAt: fs.createdAt.toISOString(),
       }))}
     />
   );

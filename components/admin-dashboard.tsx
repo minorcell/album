@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { LayoutDashboard, Copy, Trash2 } from "lucide-react";
 import type { CategoryVisibility } from "@prisma/client";
+import { AdminFileSets } from "@/components/admin-filesets";
 
 interface CategoryItem {
   id: number;
@@ -44,13 +45,23 @@ interface ShareLinkItem {
   createdAt: string;
 }
 
+interface FileSetItem {
+  id: number;
+  name: string;
+  description: string | null;
+  visibility: "private" | "internal" | "public";
+  fileCount: number;
+  createdAt: string;
+}
+
 interface AdminDashboardProps {
   categories: CategoryItem[];
   users: UserItem[];
   shareLinks: ShareLinkItem[];
+  fileSets: FileSetItem[];
 }
 
-export function AdminDashboard({ categories, users, shareLinks }: AdminDashboardProps) {
+export function AdminDashboard({ categories, users, shareLinks, fileSets }: AdminDashboardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -390,8 +401,9 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
       )}
 
       <Tabs defaultValue="categories">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="categories">分类管理</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="categories">相册管理</TabsTrigger>
+          <TabsTrigger value="filesets">文件管理</TabsTrigger>
           <TabsTrigger value="users">成员管理</TabsTrigger>
           <TabsTrigger value="share">分享链接</TabsTrigger>
         </TabsList>
@@ -487,6 +499,10 @@ export function AdminDashboard({ categories, users, shareLinks }: AdminDashboard
               </TableBody>
             </Table>
           </div>
+        </TabsContent>
+
+        <TabsContent value="filesets" className="space-y-6">
+          <AdminFileSets filesets={fileSets} />
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">

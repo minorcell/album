@@ -1,13 +1,10 @@
 // Prisma schema for Studio Album application
-
 // Using MySQL per project requirements
-// When modifying this schema, run `pnpm prisma db push`
+// When modifying this schema, run `pnpm prisma:generate` and `pnpm prisma:push`
 
 generator client {
   provider = "prisma-client-js"
 }
-
-// Point datasource to DATABASE_URL from .env
 
 datasource db {
   provider = "mysql"
@@ -21,6 +18,8 @@ model User {
   role      UserRole    @default(member)
   status    UserStatus  @default(pending)
   photos    Photo[]
+  fileSetsCreated FileSet[] @relation("UserFileSetCreator")
+  filesUploaded   File[]    @relation("UserFileCreator")
   createdAt DateTime    @default(now())
 }
 
@@ -71,4 +70,45 @@ enum CategoryVisibility {
   private
   internal
   public
+}
+
+// === Cloud Space (Files) ===
+// Simplified file management: FileSet -> File (flat structure, similar to Category -> Photo)
+
+enum FileSetVisibility {
+  private
+  internal
+  public
+}
+
+model FileSet {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  visibility  FileSetVisibility @default(internal)
+  createdBy   Int
+  creator     User              @relation("UserFileSetCreator", fields: [createdBy], references: [id])
+  files       File[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([visibility])
+}
+
+model File {
+  id           Int      @id @default(autoincrement())
+  filename     String   // Generated unique filename (like photo filename)
+  originalName String   // Original upload name
+  description  String?
+  mimeType     String
+  size         Int
+  filesetId    Int
+  uploaderId   Int
+  fileSet      FileSet  @relation(fields: [filesetId], references: [id], onDelete: Cascade)
+  uploader     User     @relation("UserFileCreator", fields: [uploaderId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([filesetId])
+  @@index([uploaderId])
 }
