@@ -151,9 +151,21 @@ export function FileManager() {
   const activeFileSet = fileSets.find((fs) => fs.id === activeFileSetId);
 
   return (
-    <div className="flex h-full flex-col gap-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">文件管理</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-foreground">
+            <FileIcon className="h-5 w-5 text-primary" />
+            <h1 className="text-2xl font-semibold tracking-tight">文件管理</h1>
+          </div>
+          {activeFileSet && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-primary">
+                文件数 {activeFileSet.fileCount}
+              </span>
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -164,12 +176,12 @@ export function FileManager() {
               className="w-64 pl-8"
             />
           </div>
-          <Button onClick={() => setShowUpload(true)} disabled={!activeFileSetId}>
+          <Button onClick={() => setShowUpload(true)} disabled={!activeFileSetId} variant="outline" size="sm">
             <Upload className="mr-2 h-4 w-4" />
             上传文件
           </Button>
         </div>
-      </header>
+      </div>
 
       {error && (
         <Alert variant="destructive">
@@ -177,9 +189,9 @@ export function FileManager() {
         </Alert>
       )}
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 md:gap-8">
         {/* Fileset selector sidebar */}
-        <aside className="w-64 shrink-0">
+        <aside className="w-64 shrink-0 hidden md:block">
           <div className="rounded-md border p-3">
             <div className="mb-3 text-sm font-medium">文件分类</div>
             <div className="space-y-1">
@@ -210,7 +222,7 @@ export function FileManager() {
         </aside>
 
         {/* File list */}
-        <section className="flex-1">
+        <section className="flex-1 min-w-0">
           {activeFileSet && (
             <div className="mb-3">
               <h2 className="text-lg font-medium">{activeFileSet.name}</h2>
@@ -220,12 +232,12 @@ export function FileManager() {
             </div>
           )}
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/2">文件名</TableHead>
-                  <TableHead className="w-32">类型</TableHead>
+                  <TableHead className="min-w-[220px]">文件名</TableHead>
+                  <TableHead className="w-28">类型</TableHead>
                   <TableHead className="w-24">大小</TableHead>
                   <TableHead className="w-32">上传时间</TableHead>
                   <TableHead className="w-24">操作</TableHead>

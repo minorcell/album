@@ -21,7 +21,7 @@ export function DocSidebar({ sections }: DocSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 shrink-0 space-y-6">
+    <aside className="w-64 shrink-0 space-y-6 hidden md:block">
       <div className="flex items-center gap-2 px-3">
         <BookOpen className="h-5 w-5 text-primary" />
         <h2 className="font-semibold">文档导航</h2>

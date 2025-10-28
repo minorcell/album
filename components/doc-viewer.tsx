@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 
 interface DocViewerProps {
@@ -9,6 +10,24 @@ interface DocViewerProps {
 }
 
 export function DocViewer({ content }: DocViewerProps) {
+  function normalizeDocHref(href?: string): { href: string; external: boolean } {
+    if (!href) return { href: "#", external: false };
+    // External links
+    if (/^https?:\/\//i.test(href)) return { href, external: true };
+    // Anchors in-page
+    if (href.startsWith("#")) return { href, external: false };
+    // Normalize internal doc links
+    // Examples: "./getting-started/registration.md", "features/files/uploading.md", "/help/features/files/uploading"
+    let base = href.replace(/^\.\//, "");
+    // Remove docs/ prefix if present
+    base = base.replace(/^docs\//, "");
+    // Strip .md extension
+    base = base.replace(/\.md$/i, "");
+    // If already starts with /help, leave as absolute; otherwise prefix
+    const final = base.startsWith("/help/") ? base : `/help/${base}`;
+    return { href: final, external: false };
+  }
+
   return (
     <Card className="prose prose-sm dark:prose-invert max-w-none p-6">
       <ReactMarkdown
@@ -38,11 +57,23 @@ export function DocViewer({ content }: DocViewerProps) {
               </code>
             ),
           pre: ({ children }) => <div className="my-3">{children}</div>,
-          a: ({ href, children }) => (
-            <a href={href} className="text-primary hover:underline" target={href?.startsWith("http") ? "_blank" : undefined} rel={href?.startsWith("http") ? "noopener noreferrer" : undefined}>
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const info = normalizeDocHref(href as string | undefined);
+            return info.external ? (
+              <a
+                href={info.href}
+                className="text-primary hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {children}
+              </a>
+            ) : (
+              <Link href={info.href} className="text-primary hover:underline">
+                {children}
+              </Link>
+            );
+          },
           table: ({ children }) => (
             <div className="my-3 overflow-x-auto">
               <table className="w-full border-collapse">{children}</table>
