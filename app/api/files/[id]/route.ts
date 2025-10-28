@@ -18,7 +18,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
 
     const authCheck = await requireAuth();
-    if ("error" in authCheck) return authCheck.error;
+    if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
     const isAdmin = session.user.role === "admin";
@@ -87,7 +87,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
 
     const authCheck = await requireAuth();
-    if ("error" in authCheck) return authCheck.error;
+    if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
     const isAdmin = session.user.role === "admin";
@@ -148,7 +148,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
 
     const authCheck = await requireAuth();
-    if ("error" in authCheck) return authCheck.error;
+    if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
     const isAdmin = session.user.role === "admin";

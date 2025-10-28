@@ -11,7 +11,7 @@ import { getFileBuffer, guessMimeFromFilename } from "@/lib/storage";
 export async function GET(req: Request) {
   try {
     const authCheck = await requireAuth();
-    if ("error" in authCheck) return authCheck.error;
+    if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
     const isAdmin = session.user.role === "admin";
@@ -49,7 +49,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "无权限" }, { status: 403 });
     }
 
-    const buffer = await getFileBuffer(file.filename);
+    const raw = (await getFileBuffer(file.filename)) as Buffer | Uint8Array | ArrayBuffer;
     const mime = file.mimeType || guessMimeFromFilename(file.originalName);
 
     // Some browsers and the Fetch headers implementation require ASCII-only header values.
@@ -58,7 +58,17 @@ export async function GET(req: Request) {
     const asciiFallback = buildAsciiFilenameFallback(file.originalName);
     const encodedUTF8 = encodeURIComponent(file.originalName);
 
-    return new NextResponse(buffer, {
+    // Ensure body conforms to BodyInit by using ArrayBuffer
+    const arrayBuffer: ArrayBuffer =
+      raw instanceof ArrayBuffer
+        ? raw
+        : raw instanceof Uint8Array
+          ? (raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer)
+          : ((raw as Buffer).buffer.slice(
+              (raw as Buffer).byteOffset,
+              (raw as Buffer).byteOffset + (raw as Buffer).byteLength,
+            ) as ArrayBuffer);
+    return new NextResponse(arrayBuffer, {
       headers: {
         "Content-Type": mime,
         // Provide both filename (ASCII fallback) and filename* (UTF-8 encoded)

@@ -104,7 +104,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const authCheck = await requireAuth();
-  if ("error" in authCheck) return authCheck.error;
+  if (!authCheck.ok) return authCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = downloadSchema.safeParse(body);
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const authCheck = await requireAuth();
-  if ("error" in authCheck) return authCheck.error;
+  if (!authCheck.ok) return authCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = deleteSchema.safeParse(body);
@@ -216,7 +216,7 @@ export async function DELETE(request: Request) {
 
 export async function PATCH(request: Request) {
   const authCheck = await requireAuth();
-  if ("error" in authCheck) return authCheck.error;
+  if (!authCheck.ok) return authCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = renameSchema.safeParse(body);

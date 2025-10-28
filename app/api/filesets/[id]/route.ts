@@ -19,9 +19,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const id = Number(idStr);
     if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
 
-    const session = await requireAuth();
-    const userId = Number(session.user.id);
-    const isAdmin = session.user.role === "admin";
+    const authCheck = await requireAuth();
+    if (!authCheck.ok) return authCheck.error;
+    const userId = Number(authCheck.session.user.id);
+    const isAdmin = authCheck.session.user.role === "admin";
 
     const item = await prisma.fileSet.findUnique({
       where: { id },
@@ -72,7 +73,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const id = Number(idStr);
     if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
 
-    await requireAdmin();
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.ok) return adminCheck.error;
 
     const body = await req.json().catch(() => undefined);
     const parsed = updateSchema.safeParse(body);
@@ -115,7 +117,8 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     const id = Number(idStr);
     if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
 
-    await requireAdmin();
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.ok) return adminCheck.error;
 
     // Get all files in this fileset to delete from storage
     const files = await prisma.file.findMany({
@@ -141,4 +144,3 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ message: "删除失败" }, { status: 500 });
   }
 }
-

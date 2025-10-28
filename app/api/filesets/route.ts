@@ -16,7 +16,7 @@ const createSchema = z.object({
 export async function GET(req: Request) {
   try {
     const authCheck = await requireAuth();
-    if ("error" in authCheck) return authCheck.error;
+    if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
     const isAdmin = session.user.role === "admin";
@@ -28,7 +28,11 @@ export async function GET(req: Request) {
     const where = isAdmin
       ? {} // Admin sees all
       : {
-          OR: [{ visibility: "internal" }, { visibility: "public" }, { createdBy: userId }],
+          OR: [
+            { visibility: "internal" as const },
+            { visibility: "public" as const },
+            { createdBy: userId },
+          ],
         };
 
     const items = await prisma.fileSet.findMany({
@@ -63,7 +67,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const adminCheck = await requireAdmin();
-    if ("error" in adminCheck) return adminCheck.error;
+    if (!adminCheck.ok) return adminCheck.error;
     const session = adminCheck.session;
 
     const body = await req.json().catch(() => undefined);

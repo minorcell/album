@@ -7,6 +7,7 @@ import { FilesSidebar } from "@/components/files/sidebar";
 import { FilesTable } from "@/components/files/table";
 import { FilesPreviewDialog } from "@/components/files/preview-dialog";
 import { FilesUploadDialog } from "@/components/files/upload-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { FileItem, FileSet } from "@/components/files/types";
 
 export function FileManager() {

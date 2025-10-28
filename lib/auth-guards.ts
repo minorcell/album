@@ -1,27 +1,33 @@
 import { NextResponse } from "next/server";
+import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 
-export async function requireAuth() {
+type SessionWithUser = Omit<Session, "user"> & { user: NonNullable<Session["user"]> };
+type AuthOk = { ok: true; session: SessionWithUser };
+type AuthErr = { ok: false; error: NextResponse };
+type AuthResult = AuthOk | AuthErr;
+
+export async function requireAuth(): Promise<AuthResult> {
   const session = await auth();
   if (!session?.user) {
     return {
+      ok: false,
       error: NextResponse.json({ error: "未授权" }, { status: 401 }),
-    } as const;
+    };
   }
-  return { session } as const;
+  return { ok: true, session: session as SessionWithUser };
 }
 
-export async function requireAdmin() {
-  const sessionCheck = await requireAuth();
-  if ("error" in sessionCheck) {
-    return sessionCheck;
-  }
+export async function requireAdmin(): Promise<AuthResult> {
+  const res = await requireAuth();
+  if (!res.ok) return res;
 
-  if (sessionCheck.session.user?.role !== "admin") {
+  if (res.session.user.role !== "admin") {
     return {
+      ok: false,
       error: NextResponse.json({ error: "权限不足" }, { status: 403 }),
-    } as const;
+    };
   }
 
-  return sessionCheck;
+  return res;
 }

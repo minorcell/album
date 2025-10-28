@@ -10,7 +10,7 @@ import { getPresignedInlineFileUrl } from "@/lib/storage";
 export async function GET(req: Request) {
   try {
     const authCheck = await requireAuth();
-    if ("error" in authCheck) return authCheck.error;
+    if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
     const isAdmin = session.user.role === "admin";

@@ -6,15 +6,33 @@ export async function GET(req: Request) {
   const session = await auth();
   const url = new URL(req.url);
   const q = (url.searchParams.get("q") || "").trim();
-  const filesetId = url.searchParams.get("filesetId");
+  const filesetIdParam = url.searchParams.get("filesetId");
   const mime = url.searchParams.get("mime");
 
-  const where: any = { deletedAt: null };
-  if (q) where.name = { contains: q };
-  if (filesetId) where.filesetId = Number(filesetId);
-  if (mime) where.mimeType = mime;
+  const where: NonNullable<Parameters<typeof prisma.file.findMany>[0]>["where"] = {};
 
-  // 权限：公开或登录用户（后续细化成员）
+  // Text search on originalName or description
+  if (q) {
+    where.OR = [
+      { originalName: { contains: q } },
+      { description: { contains: q } },
+    ];
+  }
+
+  // Filter by fileset
+  if (filesetIdParam) {
+    const filesetId = Number(filesetIdParam);
+    if (!Number.isNaN(filesetId)) {
+      where.filesetId = filesetId;
+    }
+  }
+
+  // Filter by MIME
+  if (mime) {
+    where.mimeType = mime;
+  }
+
+  // Visibility for unauthenticated users: only public file sets
   if (!session?.user) {
     where.fileSet = { visibility: "public" } as any;
   }
@@ -22,7 +40,17 @@ export async function GET(req: Request) {
   const items = await prisma.file.findMany({
     where,
     orderBy: { updatedAt: "desc" },
-    select: { id: true, name: true, size: true, mimeType: true, filesetId: true, folderId: true },
+    select: {
+      id: true,
+      filename: true,
+      originalName: true,
+      description: true,
+      size: true,
+      mimeType: true,
+      filesetId: true,
+      createdAt: true,
+      updatedAt: true,
+    },
     take: 50,
   });
   return NextResponse.json({ items });
