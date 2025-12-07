@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Play } from "lucide-react";
 
 interface PhotoItem {
   id: number;
@@ -28,7 +29,8 @@ interface PhotoItem {
   description: string | null;
   createdAt: string;
   uploader: string;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
+  mediaType: "image" | "video";
   fileUrl: string;
   isOwner: boolean;
 }
@@ -138,7 +140,7 @@ export function PhotoGrid({
 
   const handleDelete = useCallback(async () => {
     if (selectedCount === 0 || !allSelectedManageable) {
-      setActionError("请选择可删除的图片");
+      setActionError("请选择可删除的媒体");
       return;
     }
 
@@ -170,13 +172,13 @@ export function PhotoGrid({
 
   const handleRename = useCallback(() => {
     if (selectedCount !== 1) {
-      setActionError("请选择一张图片进行重命名");
+      setActionError("请选择一个媒体进行重命名");
       return;
     }
 
     const target = selectedPhotos[0];
     if (!canManagePhoto(target)) {
-      setActionError("仅可修改自己上传或有权限的图片");
+      setActionError("仅可修改自己上传或有权限的媒体");
       return;
     }
 
@@ -215,7 +217,7 @@ export function PhotoGrid({
 
   const handleDownload = useCallback(async () => {
     if (selectedCount === 0) {
-      setActionError("请选择需要下载的图片");
+      setActionError("请选择需要下载的媒体");
       return;
     }
 
@@ -386,9 +388,9 @@ export function PhotoGrid({
           <div className="text-sm text-muted-foreground">
             {selectionMode
               ? selectedCount > 0
-                ? `已选择 ${selectedCount} 张图片`
-                : "点击图片以选择"
-              : "点击图片查看大图，或开启选择模式进行批量操作"}
+                ? `已选择 ${selectedCount} 个媒体`
+                : "点击媒体以选择"
+              : "点击媒体查看详情，或开启选择模式进行批量操作"}
           </div>
           {!selectionMode && (
             <div className="text-xs text-muted-foreground/70">
@@ -544,15 +546,31 @@ export function PhotoGrid({
                           />
                         </span>
                       ) : null}
-                      <div className="relative aspect-square w-full">
-                        <Image
-                          src={photo.thumbnailUrl}
-                          alt={photo.description ?? photo.filename}
-                          fill
-                          sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                          className="object-cover transition duration-200 group-hover:scale-105"
-                          unoptimized
-                        />
+                      <div className="relative aspect-square w-full overflow-hidden bg-black/60">
+                        {photo.mediaType === "video" ? (
+                          <>
+                            <video
+                              src={photo.fileUrl}
+                              poster={photo.thumbnailUrl ?? undefined}
+                              className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+                              muted
+                              playsInline
+                              preload="metadata"
+                            />
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 text-white">
+                              <Play className="h-10 w-10 drop-shadow" />
+                            </div>
+                          </>
+                        ) : (
+                          <Image
+                            src={photo.thumbnailUrl ?? photo.fileUrl}
+                            alt={photo.description ?? photo.filename}
+                            fill
+                            sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                            className="object-cover transition duration-200 group-hover:scale-105"
+                            unoptimized
+                          />
+                        )}
                         <div className="absolute right-2 top-2 z-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -644,15 +662,31 @@ export function PhotoGrid({
                                 aria-label={isSelected ? "取消选择" : "选择"}
                               />
                             ) : null}
-                            <div className="relative h-16 w-24 overflow-hidden rounded-md border">
-                              <Image
-                                src={photo.thumbnailUrl}
-                                alt={photo.description ?? photo.filename}
-                                fill
-                                sizes="120px"
-                                className="object-cover"
-                                unoptimized
-                              />
+                            <div className="relative h-16 w-24 overflow-hidden rounded-md border bg-black/60">
+                              {photo.mediaType === "video" ? (
+                                <>
+                                  <video
+                                    src={photo.fileUrl}
+                                    poster={photo.thumbnailUrl ?? undefined}
+                                    className="h-full w-full object-cover"
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 text-white">
+                                    <Play className="h-6 w-6" />
+                                  </div>
+                                </>
+                              ) : (
+                                <Image
+                                  src={photo.thumbnailUrl ?? photo.fileUrl}
+                                  alt={photo.description ?? photo.filename}
+                                  fill
+                                  sizes="120px"
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              )}
                               <div className="absolute right-1 top-1 z-10">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -733,14 +767,25 @@ export function PhotoGrid({
                 </Button>
               </div>
               <div className="relative mt-4 flex flex-1 items-center justify-center overflow-hidden">
-                <Image
-                  src={activePhoto.fileUrl}
-                  alt={activePhoto.description ?? activePhoto.filename}
-                  fill
-                  sizes="100vw"
-                  className="object-contain"
-                  unoptimized
-                />
+                {activePhoto.mediaType === "video" ? (
+                  <video
+                    src={activePhoto.fileUrl}
+                    poster={activePhoto.thumbnailUrl ?? undefined}
+                    className="h-full w-full max-h-full max-w-full object-contain"
+                    controls
+                    playsInline
+                    preload="metadata"
+                  />
+                ) : (
+                  <Image
+                    src={activePhoto.fileUrl}
+                    alt={activePhoto.description ?? activePhoto.filename}
+                    fill
+                    sizes="100vw"
+                    className="object-contain"
+                    unoptimized
+                  />
+                )}
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-white/80 sm:text-sm">
                 <Badge variant="secondary">上传者：{activePhoto.uploader}</Badge>
@@ -779,11 +824,11 @@ export function PhotoGrid({
       >
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>重命名图片</DialogTitle>
+            <DialogTitle>重命名媒体</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="photo-new-name">图片描述</Label>
+              <Label htmlFor="photo-new-name">媒体描述</Label>
               <Input
                 id="photo-new-name"
                 placeholder="输入新的描述"

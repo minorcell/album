@@ -40,6 +40,8 @@ model Photo {
   description  String?
   categoryId   Int
   uploaderId   Int
+  mediaType    MediaType @default(image)
+  mimeType     String
   category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   uploader     User     @relation(fields: [uploaderId], references: [id])
   createdAt    DateTime @default(now())
@@ -70,6 +72,11 @@ enum CategoryVisibility {
   private
   internal
   public
+}
+
+enum MediaType {
+  image
+  video
 }
 
 // === Cloud Space (Files) ===

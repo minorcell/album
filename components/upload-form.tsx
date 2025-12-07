@@ -21,7 +21,8 @@ interface UploadedPhoto {
   id: number;
   filename: string;
   description: string | null;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
+  mediaType: "image" | "video";
   fileUrl: string;
 }
 
@@ -70,7 +71,7 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
     setStatus(null);
 
     if (!files || files.length === 0) {
-      setError("请选择至少一张图片");
+      setError("请选择至少一个文件");
       return;
     }
 
@@ -160,14 +161,14 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
             id="description"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="简单描述照片信息"
+            placeholder="简单描述媒体信息"
             rows={4}
           />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>上传图片</Label>
+        <Label>上传媒体</Label>
         <div
           className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/50 bg-muted/40 text-center"
           onClick={() => inputRef.current?.click()}
@@ -177,12 +178,14 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
             id="files"
             type="file"
             multiple
-            accept="image/png,image/jpeg,image/gif,image/webp"
+            accept="image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
             className="hidden"
             onChange={handleSelectFiles}
           />
           <p className="text-sm font-medium">点击或拖拽文件到此处</p>
-          <p className="text-xs text-muted-foreground">支持 JPG / PNG / GIF / WebP，单个文件不超过 10MB。</p>
+          <p className="text-xs text-muted-foreground">
+            支持 JPG / PNG / GIF / WebP（≤10MB）及 MP4 / WebM / MOV（≤512MB）。
+          </p>
           {files && files.length > 0 && (
             <p className="mt-2 text-sm text-muted-foreground">
               已选择 {files.length} 个文件
@@ -233,14 +236,30 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
           <div className="grid gap-3 sm:grid-cols-3">
             {uploaded.map((photo) => (
               <div key={photo.id} className="overflow-hidden rounded-lg border">
-                <Image
-                  src={photo.thumbnailUrl}
-                  alt={photo.description ?? photo.filename}
-                  width={300}
-                  height={200}
-                  className="h-32 w-full object-cover"
-                  unoptimized
-                />
+                {photo.mediaType === "video" ? (
+                  <div className="relative h-32 w-full overflow-hidden bg-black/60">
+                    <video
+                      src={photo.fileUrl}
+                      poster={photo.thumbnailUrl ?? undefined}
+                      className="h-full w-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 text-white">
+                      <span className="rounded-full bg-black/60 px-2 py-1 text-xs">视频</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Image
+                    src={photo.thumbnailUrl ?? photo.fileUrl}
+                    alt={photo.description ?? photo.filename}
+                    width={300}
+                    height={200}
+                    className="h-32 w-full object-cover"
+                    unoptimized
+                  />
+                )}
                 <div className="px-3 py-2 text-xs text-muted-foreground">
                   {photo.description ?? "无描述"}
                 </div>

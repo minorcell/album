@@ -26,8 +26,10 @@ interface ShareResponse {
       description: string | null;
       createdAt: string;
       uploader: string;
-      thumbnailUrl: string;
+      thumbnailUrl: string | null;
+      mediaType: "image" | "video";
       fileUrl: string;
+      mimeType: string;
     }>;
   };
 }
@@ -129,6 +131,7 @@ export function ShareViewer({ token }: ShareViewerProps) {
     createdAt: photo.createdAt,
     uploader: photo.uploader,
     thumbnailUrl: photo.thumbnailUrl,
+    mediaType: photo.mediaType,
     fileUrl: photo.fileUrl,
     isOwner: false,
   }));
@@ -141,12 +144,12 @@ export function ShareViewer({ token }: ShareViewerProps) {
           <p className="text-sm text-muted-foreground">{data.category.description}</p>
         )}
         <p className="text-xs text-muted-foreground">
-          {data.category.photos.length} 张图片
+          {data.category.photos.length} 个媒体
           {data.expiresAt && ` · 链接将在 ${new Date(data.expiresAt).toLocaleString()} 过期`}
         </p>
       </div>
       {data.category.photos.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">暂未添加任何图片。</p>
+        <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">暂未添加任何媒体。</p>
       ) : (
         <PhotoGrid
           photos={mappedPhotos}

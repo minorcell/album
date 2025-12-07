@@ -3,6 +3,43 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { AdminDashboard } from "@/components/admin-dashboard";
+import type { CategoryVisibility, FileSetVisibility, UserRole, UserStatus } from "@prisma/client";
+
+type CategoryWithCount = {
+  id: number;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  visibility: CategoryVisibility;
+  _count: { photos: number };
+};
+
+type UserWithPhotoCount = {
+  id: number;
+  username: string;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: Date;
+  _count: { photos: number };
+};
+
+type ShareLinkWithCategory = {
+  id: number;
+  categoryId: number;
+  token: string;
+  expiresAt: Date | null;
+  createdAt: Date;
+  category: { name: string };
+};
+
+type FileSetWithCount = {
+  id: number;
+  name: string;
+  description: string | null;
+  visibility: FileSetVisibility;
+  createdAt: Date;
+  _count: { files: number };
+};
 
 export default async function AdminPage() {
   const session = await auth();
@@ -10,7 +47,12 @@ export default async function AdminPage() {
     redirect("/login?callbackUrl=/admin");
   }
 
-  const [categories, users, shareLinks, fileSets] = await Promise.all([
+  const [categories, users, shareLinks, fileSets] = await Promise.all<[
+    CategoryWithCount[],
+    UserWithPhotoCount[],
+    ShareLinkWithCategory[],
+    FileSetWithCount[],
+  ]>([
     prisma.category.findMany({
       orderBy: { createdAt: "desc" },
       include: { _count: { select: { photos: true } } },

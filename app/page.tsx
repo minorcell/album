@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 
-import { Prisma, CategoryVisibility } from "@prisma/client"
+import type { Prisma, CategoryVisibility } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { Card } from "@/components/ui/card"
 import { UploadDialog } from "@/components/upload-dialog"
@@ -15,6 +15,15 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
   const params = (await searchParams) ?? {};
   const sort = (typeof params["sort"] === "string" ? params["sort"] : undefined) === "asc" ? "asc" : "desc";
   const session = await auth()
+  type CategoryCard = {
+    id: number;
+    name: string;
+    description: string | null;
+    visibility: CategoryVisibility;
+    createdAt: Date;
+    photos: Array<{ filename: string; createdAt: Date }>;
+    _count: { photos: number };
+  }
   const internalVisibilities: CategoryVisibility[] = ["internal", "public"]
   const where: Prisma.CategoryWhereInput = !session?.user
     ? { visibility: "public" }
@@ -22,7 +31,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
       ? {}
       : { visibility: { in: internalVisibilities } }
 
-  const categories = await prisma.category.findMany({
+  const categories = (await prisma.category.findMany({
     where,
     orderBy: { createdAt: sort },
     include: {
@@ -36,7 +45,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
         },
       },
     },
-  })
+  })) as CategoryCard[]
 
   return (
     <div className="space-y-6">

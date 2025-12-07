@@ -9,7 +9,7 @@ export async function GET(req: Request) {
   const filesetIdParam = url.searchParams.get("filesetId");
   const mime = url.searchParams.get("mime");
 
-  const where: NonNullable<Parameters<typeof prisma.file.findMany>[0]>["where"] = {};
+  const where: Record<string, unknown> = {};
 
   // Text search on originalName or description
   if (q) {

@@ -8,9 +8,30 @@ import { getPublicObjectUrl, getPublicThumbnailUrl } from "@/lib/storage";
 import { Images, CalendarClock, CalendarDays, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { CategoryVisibility } from "@prisma/client";
+import type { CategoryVisibility } from "@prisma/client";
 import { SearchTrigger } from "@/components/search-trigger";
 import { SortToggle } from "@/components/sort-toggle";
+
+type PhotoRecord = {
+  id: number;
+  filename: string;
+  originalName: string;
+  description: string | null;
+  categoryId: number;
+  uploaderId: number;
+  mediaType: "image" | "video";
+  createdAt: Date;
+  uploader: { username: string };
+};
+
+type CategoryWithPhotos = {
+  id: number;
+  name: string;
+  description: string | null;
+  visibility: CategoryVisibility;
+  createdAt: Date;
+  photos: PhotoRecord[];
+};
 
 export default async function AlbumPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const { id } = await params;
@@ -23,7 +44,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
 
   const session = await auth();
 
-  const category = await prisma.category.findUnique({
+  const category = (await prisma.category.findUnique({
     where: { id: categoryId },
     include: {
       photos: {
@@ -33,7 +54,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
         },
       },
     },
-  });
+  })) as CategoryWithPhotos | null;
 
   if (!category) {
     notFound();
@@ -65,7 +86,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
           ? {}
           : {
               visibility: {
-                in: [CategoryVisibility.internal, CategoryVisibility.public],
+                in: ["internal", "public"] as CategoryVisibility[],
               },
             },
         select: { id: true, name: true },
@@ -80,7 +101,8 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
     description: photo.description,
     createdAt: photo.createdAt.toISOString(),
     uploader: photo.uploader.username,
-    thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+    mediaType: photo.mediaType,
+    thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
     fileUrl: getPublicObjectUrl(photo.filename),
     isOwner: viewerId !== null && photo.uploaderId === viewerId,
   }));
@@ -101,7 +123,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-primary">
               <ImageIcon className="h-3 w-3" />
-              {photos.length} 张照片
+              {photos.length} 个媒体
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1">
               <CalendarClock className="h-3 w-3" />
@@ -122,7 +144,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
             defaultCategoryId={category.id}
             triggerVariant="outline"
             triggerSize="sm"
-            triggerLabel="上传照片"
+            triggerLabel="上传媒体"
           />
         ) : null}
         </div>
@@ -130,7 +152,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
 
       {photos.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
-          暂无照片，欢迎上传。
+          暂无媒体，欢迎上传。
         </div>
       ) : (
         <PhotoGrid

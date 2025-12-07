@@ -121,10 +121,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     if (!adminCheck.ok) return adminCheck.error;
 
     // Get all files in this fileset to delete from storage
-    const files = await prisma.file.findMany({
+    const files = (await prisma.file.findMany({
       where: { filesetId: id },
       select: { filename: true },
-    });
+    })) as Array<{ filename: string }>;
 
     // Delete from storage (best effort)
     await Promise.allSettled(files.map((f) => deleteFileAsset(f.filename)));

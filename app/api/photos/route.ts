@@ -2,18 +2,38 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import JSZip from "jszip";
 
-import { Prisma, CategoryVisibility } from "@prisma/client";
+import type { Prisma, CategoryVisibility } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-guards";
 import { auth } from "@/lib/auth";
 import {
   ConfigurationError,
   deleteImageAssets,
+  deleteUploadObject,
   getOriginalBuffer,
   getPublicObjectUrl,
   getPublicThumbnailUrl,
   isNotFoundError,
 } from "@/lib/storage";
+
+type PhotoWithRelations = {
+  id: number;
+  filename: string;
+  originalName: string;
+  description: string | null;
+  createdAt: Date;
+  mediaType: "image" | "video";
+  mimeType: string;
+  uploader: { username: string };
+  category: { name: string };
+};
+
+type PhotoForDeletion = {
+  id: number;
+  filename: string;
+  uploaderId: number;
+  mediaType: "image" | "video";
+};
 
 const idArraySchema = z.array(z.number().int().positive()).min(1);
 
@@ -44,9 +64,9 @@ export async function GET(request: Request) {
   const pageSize = Math.min(Math.max(Number.parseInt(pageSizeParam, 10) || 24, 1), 96);
 
   const session = await auth();
-  const internalVisibilities: CategoryVisibility[] = [CategoryVisibility.internal, CategoryVisibility.public];
+  const internalVisibilities: CategoryVisibility[] = ["internal", "public"];
   const visibilityFilter: Prisma.PhotoWhereInput = !session?.user
-    ? { category: { visibility: CategoryVisibility.public } }
+    ? { category: { visibility: "public" } }
     : session.user.role === "admin"
       ? {}
       : { category: { visibility: { in: internalVisibilities } } };
@@ -57,7 +77,7 @@ export async function GET(request: Request) {
     ...visibilityFilter,
   };
 
-  const photos = await prisma.photo.findMany({
+  const photos = (await prisma.photo.findMany({
     where,
     orderBy: { createdAt: "desc" },
     skip: (page - 1) * pageSize,
@@ -70,7 +90,7 @@ export async function GET(request: Request) {
         select: { name: true },
       },
     },
-  });
+  })) as PhotoWithRelations[];
 
   const total = await prisma.photo.count({ where });
 
@@ -84,8 +104,10 @@ export async function GET(request: Request) {
         createdAt: photo.createdAt,
         uploader: photo.uploader.username,
         category: photo.category.name,
+        mediaType: photo.mediaType,
+        mimeType: photo.mimeType,
         fileUrl: getPublicObjectUrl(photo.filename),
-        thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+        thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
       })),
       meta: {
         page,
@@ -122,7 +144,7 @@ export async function POST(request: Request) {
   });
 
   if (photos.length === 0) {
-    return NextResponse.json({ error: "图片不存在" }, { status: 404 });
+    return NextResponse.json({ error: "媒体不存在" }, { status: 404 });
   }
 
   const zip = new JSZip();
@@ -151,7 +173,7 @@ export async function POST(request: Request) {
   }
 
   if (addedCount === 0) {
-    return NextResponse.json({ error: "图片文件不存在" }, { status: 404 });
+    return NextResponse.json({ error: "媒体文件不存在" }, { status: 404 });
   }
 
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
@@ -179,10 +201,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const targetPhotos = await prisma.photo.findMany({
+  const targetPhotos = (await prisma.photo.findMany({
     where: { id: { in: parsed.data.ids } },
-    select: { id: true, filename: true, uploaderId: true },
-  });
+    select: { id: true, filename: true, uploaderId: true, mediaType: true },
+  })) as PhotoForDeletion[];
 
   if (targetPhotos.length === 0) {
     return NextResponse.json({ deleted: 0 }, { status: 200 });
@@ -202,7 +224,13 @@ export async function DELETE(request: Request) {
   await prisma.photo.deleteMany({ where: { id: { in: targetPhotos.map((photo) => photo.id) } } });
 
   try {
-    await Promise.all(targetPhotos.map((photo) => deleteImageAssets(photo.filename)));
+    await Promise.all(
+      targetPhotos.map((photo) =>
+        photo.mediaType === "image"
+          ? deleteImageAssets(photo.filename)
+          : deleteUploadObject(photo.filename),
+      ),
+    );
   } catch (error) {
     if (error instanceof ConfigurationError) {
       console.error(error);
@@ -230,7 +258,7 @@ export async function PATCH(request: Request) {
   });
 
   if (!photo) {
-    return NextResponse.json({ error: "图片不存在" }, { status: 404 });
+    return NextResponse.json({ error: "媒体不存在" }, { status: 404 });
   }
 
   const requesterId = Number.parseInt(authCheck.session.user!.id, 10);

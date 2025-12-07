@@ -35,7 +35,17 @@ export async function GET(req: Request) {
           ],
         };
 
-    const items = await prisma.fileSet.findMany({
+    type FileSetItem = {
+      id: number;
+      name: string;
+      description: string | null;
+      visibility: "private" | "internal" | "public";
+      _count: { files: number };
+      createdAt: Date;
+      updatedAt: Date;
+    };
+
+    const items = (await prisma.fileSet.findMany({
       where,
       orderBy: { updatedAt: "desc" },
       select: {
@@ -47,7 +57,7 @@ export async function GET(req: Request) {
         createdAt: true,
         updatedAt: true,
       },
-    });
+    })) as FileSetItem[];
 
     return NextResponse.json({
       items: items.map((item) => ({
