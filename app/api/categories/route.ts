@@ -4,12 +4,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
 import { auth } from "@/lib/auth";
-import { Prisma, CategoryVisibility } from "@prisma/client";
+import type { Prisma, CategoryVisibility } from "@prisma/client";
+
+const visibilityEnum = z.enum(["private", "internal", "public"] satisfies CategoryVisibility[]);
 
 const categoryCreateSchema = z.object({
   name: z.string().min(1, "分类名称不能为空"),
   description: z.string().optional(),
-  visibility: z.nativeEnum(CategoryVisibility).default(CategoryVisibility.internal),
+  visibility: visibilityEnum.default("internal"),
 });
 
 const categoryUpdateSchema = categoryCreateSchema.extend({
@@ -20,16 +22,25 @@ const categoryDeleteSchema = z.object({
   id: z.number().int(),
 });
 
+type CategoryWithCount = {
+  id: number;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  visibility: CategoryVisibility;
+  _count: { photos: number };
+};
+
 export async function GET() {
   const session = await auth();
-  const internalVisibilities: CategoryVisibility[] = [CategoryVisibility.internal, CategoryVisibility.public];
+  const internalVisibilities: CategoryVisibility[] = ["internal", "public"];
   const where: Prisma.CategoryWhereInput = !session?.user
-    ? { visibility: CategoryVisibility.public }
+    ? { visibility: "public" }
     : session.user.role === "admin"
       ? {}
       : { visibility: { in: internalVisibilities } };
 
-  const categories = await prisma.category.findMany({
+  const categories = (await prisma.category.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
@@ -37,7 +48,7 @@ export async function GET() {
         select: { photos: true },
       },
     },
-  });
+  })) as CategoryWithCount[];
 
   return NextResponse.json(
     categories.map((category) => ({

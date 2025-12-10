@@ -6,6 +6,15 @@ import { requireAdmin } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 
+type UserWithCount = {
+  id: number;
+  username: string;
+  role: "admin" | "member";
+  status: "pending" | "active" | "rejected";
+  createdAt: Date;
+  _count: { photos: number };
+};
+
 const createUserSchema = z.object({
   username: z.string().min(3, "用户名至少 3 位"),
   password: z.string().min(6, "密码至少 6 位"),
@@ -66,7 +75,7 @@ export async function GET(request: Request) {
           select: { photos: true },
         },
       },
-    }),
+    }) as Promise<UserWithCount[]>,
     prisma.user.count({ where }),
   ]);
 

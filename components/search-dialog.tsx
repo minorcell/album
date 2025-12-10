@@ -37,7 +37,9 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
     filename: string;
     originalName: string | null;
     description: string | null;
-    thumbnailUrl: string;
+    thumbnailUrl: string | null;
+    fileUrl: string;
+    mediaType: "image" | "video";
   }
 
   const [results, setResults] = useState<{ categories: CategoryResult[]; photos: PhotoResult[] }>({ categories: [], photos: [] });
@@ -82,7 +84,9 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
           filename: p.filename,
           originalName: p.originalName,
           description: p.description,
-          thumbnailUrl: p.thumbnailUrl,
+          thumbnailUrl: p.thumbnailUrl ?? null,
+          fileUrl: p.fileUrl ?? p.thumbnailUrl ?? "",
+          mediaType: (p.mediaType as PhotoResult["mediaType"]) ?? "image",
         }));
 
         setResults({ categories: normalizedCategories, photos: normalizedPhotos });
@@ -102,7 +106,7 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               autoFocus
-              placeholder="搜索相册名称、描述，或图片文件名/描述"
+              placeholder="搜索相册名称、描述，或媒体文件名/描述"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-9"
@@ -142,7 +146,7 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
           {results.photos.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium uppercase text-muted-foreground">匹配的图片</h3>
+                <h3 className="text-xs font-medium uppercase text-muted-foreground">匹配的媒体</h3>
                 <Badge variant="outline">{results.photos.length}</Badge>
               </div>
               <Table>
@@ -162,14 +166,30 @@ export function SearchDialog({ open, onOpenChange, categoryId }: SearchDialogPro
                     >
                       <TableCell>
                         <div className="relative h-16 w-24 overflow-hidden rounded">
-                          <Image
-                            src={p.thumbnailUrl}
-                            alt={p.description ?? p.filename}
-                            fill
-                            sizes="96px"
-                            className="object-cover"
-                            unoptimized
-                          />
+                          {p.mediaType === "video" ? (
+                            <>
+                              <video
+                                src={p.fileUrl}
+                                poster={p.thumbnailUrl ?? undefined}
+                                className="h-full w-full object-cover"
+                                muted
+                                playsInline
+                                preload="metadata"
+                              />
+                              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 text-white">
+                                <Search className="h-5 w-5" />
+                              </div>
+                            </>
+                          ) : (
+                            <Image
+                              src={p.thumbnailUrl ?? p.fileUrl}
+                              alt={p.description ?? p.filename}
+                              fill
+                              sizes="96px"
+                              className="object-cover"
+                              unoptimized
+                            />
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">

@@ -3,6 +3,18 @@ import { requireAuth } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { persistFile, deleteFileAsset, getPublicFileUrl } from "@/lib/storage";
 
+type FileItem = {
+  id: number;
+  filename: string;
+  originalName: string | null;
+  description: string | null;
+  mimeType: string;
+  size: number;
+  uploaderId: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 /**
  * GET /api/files - List files in a fileset
  */
@@ -45,7 +57,7 @@ export async function GET(req: Request) {
     const where: any = { filesetId: Number(filesetId) };
     if (q) where.originalName = { contains: q };
 
-    const items = await prisma.file.findMany({
+    const items = (await prisma.file.findMany({
       where,
       orderBy: { createdAt: "desc" },
       select: {
@@ -60,7 +72,7 @@ export async function GET(req: Request) {
         updatedAt: true,
       },
       take: 100,
-    });
+    })) as FileItem[];
 
     return NextResponse.json({
       items: items.map((item) => ({

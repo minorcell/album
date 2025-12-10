@@ -7,6 +7,7 @@ import {
   ConfigurationError,
   getPublicObjectUrl,
   getPublicThumbnailUrl,
+  persistVideo,
   persistImage,
   UploadError,
 } from "@/lib/storage";
@@ -57,7 +58,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { filename, originalName } = await persistImage(file);
+    const isImage = file.type.startsWith("image/");
+    const mimeType = file.type || (isImage ? "image/jpeg" : "video/mp4");
+    const { filename, originalName } = isImage ? await persistImage(file) : await persistVideo(file);
 
     const photo = await prisma.photo.create({
       data: {
@@ -66,6 +69,8 @@ export async function POST(request: Request) {
         description: parsed.data.description,
         categoryId: parsed.data.categoryId,
         uploaderId,
+        mediaType: isImage ? "image" : "video",
+        mimeType,
       },
       include: {
         uploader: { select: { username: true } },
@@ -80,8 +85,10 @@ export async function POST(request: Request) {
       categoryId: photo.categoryId,
       uploader: photo.uploader.username,
       createdAt: photo.createdAt,
+      mediaType: photo.mediaType,
+      mimeType: photo.mimeType,
       fileUrl: getPublicObjectUrl(photo.filename),
-      thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+      thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
     });
   } catch (error) {
     if (error instanceof UploadError) {

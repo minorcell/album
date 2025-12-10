@@ -36,8 +36,10 @@ export function UploadDialog({
       </DialogTrigger>
       <DialogContent className="max-w-2xl" onOpenAutoFocus={(event) => event.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>上传图片</DialogTitle>
-          <DialogDescription>支持批量上传 JPG / PNG / GIF / WebP 图片，单个文件不超过 10MB。</DialogDescription>
+          <DialogTitle>上传媒体</DialogTitle>
+          <DialogDescription>
+            支持批量上传 JPG / PNG / GIF / WebP 图片（10MB 内）以及 MP4 / WebM / MOV 视频（512MB 内）。
+          </DialogDescription>
         </DialogHeader>
         <UploadForm categories={categories} defaultCategoryId={defaultCategoryId} onSuccess={handleSuccess} />
       </DialogContent>

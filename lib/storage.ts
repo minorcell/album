@@ -3,8 +3,10 @@ import { randomUUID } from "crypto";
 import sharp from "sharp";
 import { TosClient, TosServerCode, TosServerError } from "@volcengine/tos-sdk";
 
-const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
+const ALLOWED_VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_VIDEO_FILE_SIZE = 512 * 1024 * 1024; // 512MB for videos
 const MAX_GENERAL_FILE_SIZE = 512 * 1024 * 1024; // 512MB for general files
 
 export class ConfigurationError extends Error {}
@@ -39,7 +41,7 @@ export async function persistImage(file: File) {
   const config = getConfig();
   const client = getClient();
 
-  if (!ALLOWED_MIME.has(file.type)) {
+  if (!ALLOWED_IMAGE_MIME.has(file.type)) {
     throw new UploadError("仅支持 JPG/PNG/GIF/WebP 图片");
   }
 
@@ -85,6 +87,39 @@ export async function persistImage(file: File) {
   };
 }
 
+export async function persistVideo(file: File) {
+  const config = getConfig();
+  const client = getClient();
+
+  if (!ALLOWED_VIDEO_MIME.has(file.type)) {
+    throw new UploadError("仅支持 MP4 / WebM / MOV 视频");
+  }
+
+  if (file.size > MAX_VIDEO_FILE_SIZE) {
+    throw new UploadError(`文件大小超出限制 (${Math.floor(MAX_VIDEO_FILE_SIZE / 1024 / 1024)}MB)`);
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  const originalName = file.name;
+  const extension = getExtensionFromFile(file) || getExtensionFromMime(file.type);
+  const filename = `${Date.now()}-${randomUUID()}${extension}`;
+  const objectKey = buildObjectKey(filename, config);
+
+  await client.putObject({
+    bucket: config.bucket,
+    key: objectKey,
+    body: buffer,
+    contentType: file.type || "video/mp4",
+  });
+
+  return {
+    filename,
+    originalName,
+  };
+}
+
 export async function deleteImageAssets(filename: string) {
   const config = getConfig();
   const client = getClient();
@@ -102,6 +137,20 @@ export async function deleteImageAssets(filename: string) {
       }
     }),
   );
+}
+
+export async function deleteUploadObject(filename: string) {
+  const config = getConfig();
+  const client = getClient();
+  const key = buildObjectKey(filename, config);
+
+  try {
+    await client.deleteObject({ bucket: config.bucket, key });
+  } catch (error) {
+    if (!isNotFoundError(error)) {
+      throw error;
+    }
+  }
 }
 
 export async function getOriginalBuffer(filename: string) {
@@ -431,6 +480,12 @@ function getExtensionFromMime(mime: string) {
       return ".gif";
     case "image/webp":
       return ".webp";
+    case "video/mp4":
+      return ".mp4";
+    case "video/webm":
+      return ".webm";
+    case "video/quicktime":
+      return ".mov";
     default:
       return "";
   }

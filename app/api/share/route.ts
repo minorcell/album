@@ -12,6 +12,29 @@ import {
   getPublicThumbnailUrl,
 } from "@/lib/storage";
 
+type SharedPhoto = {
+  id: number;
+  filename: string;
+  originalName: string;
+  description: string | null;
+  createdAt: Date;
+  mediaType: "image" | "video";
+  mimeType: string;
+  uploader: { username: string };
+};
+
+type ShareLinkWithCategory = {
+  token: string;
+  expiresAt: Date | null;
+  password?: string | null;
+  category: {
+    id: number;
+    name: string;
+    description: string | null;
+    photos: SharedPhoto[];
+  };
+};
+
 const createShareSchema = z.object({
   categoryId: z.number().int(),
   password: z.string().min(4).max(50).optional(),
@@ -84,7 +107,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "无效的分享链接" }, { status: 400 });
   }
 
-  const shareLink = await prisma.shareLink.findUnique({
+  const shareLink = (await prisma.shareLink.findUnique({
     where: { token: parsed.data.token },
     include: {
       category: {
@@ -100,6 +123,8 @@ export async function GET(request: Request) {
               originalName: true,
               description: true,
               createdAt: true,
+              mediaType: true,
+              mimeType: true,
               uploader: {
                 select: { username: true },
               },
@@ -108,7 +133,7 @@ export async function GET(request: Request) {
         },
       },
     },
-  });
+  })) as (ShareLinkWithCategory | null);
 
   if (!shareLink) {
     return NextResponse.json({ error: "分享链接不存在" }, { status: 404 });
@@ -143,8 +168,10 @@ export async function GET(request: Request) {
           description: photo.description,
           createdAt: photo.createdAt.toISOString(),
           uploader: photo.uploader.username,
+          mediaType: photo.mediaType,
+          mimeType: photo.mimeType,
           fileUrl: getPublicObjectUrl(photo.filename),
-          thumbnailUrl: getPublicThumbnailUrl(photo.filename),
+          thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
         })),
       },
     });
