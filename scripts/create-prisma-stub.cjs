@@ -1,14 +1,14 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
 function ensurePrismaStub() {
   try {
-    const packageJsonPath = require.resolve("@prisma/client/package.json");
+    const packageJsonPath = require.resolve('@prisma/client/package.json');
     const clientRoot = path.dirname(packageJsonPath);
-    const stubDir = path.join(clientRoot, ".prisma", "client");
-    const altStubDir = path.join(process.cwd(), "node_modules", ".prisma", "client");
-    const stubPath = path.join(stubDir, "default.js");
-    const altStubPath = path.join(altStubDir, "default.js");
+    const stubDir = path.join(clientRoot, '.prisma', 'client');
+    const altStubDir = path.join(process.cwd(), 'node_modules', '.prisma', 'client');
+    const stubPath = path.join(stubDir, 'default.js');
+    const altStubPath = path.join(altStubDir, 'default.js');
 
     if (fs.existsSync(stubPath) && fs.existsSync(altStubPath)) {
       return;
@@ -65,13 +65,13 @@ module.exports = {
 };
 `;
 
-    fs.writeFileSync(stubPath, stubContent, "utf8");
-    fs.writeFileSync(altStubPath, stubContent, "utf8");
+    fs.writeFileSync(stubPath, stubContent, 'utf8');
+    fs.writeFileSync(altStubPath, stubContent, 'utf8');
     // eslint-disable-next-line no-console
-    console.warn("Created Prisma client stub at", stubPath, "and", altStubPath);
+    console.warn('Created Prisma client stub at', stubPath, 'and', altStubPath);
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error("Failed to create Prisma client stub", error);
+    console.error('Failed to create Prisma client stub', error);
   }
 }
 

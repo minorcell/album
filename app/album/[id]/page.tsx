@@ -1,16 +1,15 @@
-import { notFound, redirect } from "next/navigation";
-
-import { prisma } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { PhotoGrid } from "@/components/photo-grid";
-import { UploadDialog } from "@/components/upload-dialog";
-import { getPublicObjectUrl, getPublicThumbnailUrl } from "@/lib/storage";
-import { Images, CalendarClock, CalendarDays, Image as ImageIcon } from "lucide-react";
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import type { CategoryVisibility } from "@prisma/client";
-import { SearchTrigger } from "@/components/search-trigger";
-import { SortToggle } from "@/components/sort-toggle";
+import { PhotoGrid } from '@/components/photo-grid';
+import { SearchTrigger } from '@/components/search-trigger';
+import { SortToggle } from '@/components/sort-toggle';
+import { UploadDialog } from '@/components/upload-dialog';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { getPublicObjectUrl, getPublicThumbnailUrl } from '@/lib/storage';
+import type { CategoryVisibility } from '@prisma/client';
+import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
+import { CalendarClock, CalendarDays, Image as ImageIcon, Images } from 'lucide-react';
+import { notFound, redirect } from 'next/navigation';
 
 type PhotoRecord = {
   id: number;
@@ -19,7 +18,7 @@ type PhotoRecord = {
   description: string | null;
   categoryId: number;
   uploaderId: number;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
   createdAt: Date;
   uploader: { username: string };
 };
@@ -33,10 +32,16 @@ type CategoryWithPhotos = {
   photos: PhotoRecord[];
 };
 
-export default async function AlbumPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function AlbumPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const { id } = await params;
   const q = (await searchParams) ?? {};
-  const sort = (typeof q["sort"] === "string" ? q["sort"] : undefined) === "asc" ? "asc" : "desc";
+  const sort = (typeof q['sort'] === 'string' ? q['sort'] : undefined) === 'asc' ? 'asc' : 'desc';
   const categoryId = Number.parseInt(id, 10);
   if (!Number.isInteger(categoryId)) {
     notFound();
@@ -60,14 +65,14 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
     notFound();
   }
 
-  const isAdmin = session?.user?.role === "admin";
+  const isAdmin = session?.user?.role === 'admin';
   const isLoggedIn = Boolean(session?.user);
 
   if (!isAdmin) {
-    if (category.visibility === "private") {
+    if (category.visibility === 'private') {
       notFound();
     }
-    if (category.visibility === "internal" && !isLoggedIn) {
+    if (category.visibility === 'internal' && !isLoggedIn) {
       redirect(`/login?callbackUrl=/album/${category.id}`);
     }
   }
@@ -86,15 +91,15 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
           ? {}
           : {
               visibility: {
-                in: ["internal", "public"] as CategoryVisibility[],
+                in: ['internal', 'public'] as CategoryVisibility[],
               },
             },
         select: { id: true, name: true },
-        orderBy: { name: "asc" },
+        orderBy: { name: 'asc' },
       })
     : [];
 
-  const photos = category.photos.map((photo) => ({
+  const photos = category.photos.map(photo => ({
     id: photo.id,
     filename: photo.filename,
     originalName: photo.originalName,
@@ -102,7 +107,7 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
     createdAt: photo.createdAt.toISOString(),
     uploader: photo.uploader.username,
     mediaType: photo.mediaType,
-    thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
+    thumbnailUrl: photo.mediaType === 'image' ? getPublicThumbnailUrl(photo.filename) : null,
     fileUrl: getPublicObjectUrl(photo.filename),
     isOwner: viewerId !== null && photo.uploaderId === viewerId,
   }));
@@ -113,45 +118,45 @@ export default async function AlbumPage({ params, searchParams }: { params: Prom
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-foreground">
-            <Images className="h-5 w-5 text-primary" />
+          <div className="text-foreground flex items-center gap-2">
+            <Images className="text-primary h-5 w-5" />
             <h1 className="text-2xl font-semibold tracking-tight">{category.name}</h1>
           </div>
           {category.description && (
-            <p className="text-sm text-muted-foreground">{category.description}</p>
+            <p className="text-muted-foreground text-sm">{category.description}</p>
           )}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-primary">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs">
+            <span className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded-full px-3 py-1">
               <ImageIcon className="h-3 w-3" />
               {photos.length} 个媒体
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1">
+            <span className="bg-muted inline-flex items-center gap-1 rounded-full px-3 py-1">
               <CalendarClock className="h-3 w-3" />
-              最近更新：{format(latestPhotoDate, "yyyy-MM-dd HH:mm", { locale: zhCN })}
+              最近更新：{format(latestPhotoDate, 'yyyy-MM-dd HH:mm', { locale: zhCN })}
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1">
+            <span className="bg-muted inline-flex items-center gap-1 rounded-full px-3 py-1">
               <CalendarDays className="h-3 w-3" />
-              创建时间：{format(category.createdAt, "yyyy-MM-dd", { locale: zhCN })}
+              创建时间：{format(category.createdAt, 'yyyy-MM-dd', { locale: zhCN })}
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <SearchTrigger categoryId={category.id} />
           <SortToggle />
-        {session?.user ? (
-          <UploadDialog
-            categories={uploadCategories}
-            defaultCategoryId={category.id}
-            triggerVariant="outline"
-            triggerSize="sm"
-            triggerLabel="上传媒体"
-          />
-        ) : null}
+          {session?.user ? (
+            <UploadDialog
+              categories={uploadCategories}
+              defaultCategoryId={category.id}
+              triggerVariant="outline"
+              triggerSize="sm"
+              triggerLabel="上传媒体"
+            />
+          ) : null}
         </div>
       </div>
 
       {photos.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+        <div className="text-muted-foreground rounded-lg border border-dashed p-10 text-center">
           暂无媒体，欢迎上传。
         </div>
       ) : (

@@ -1,10 +1,10 @@
-import "server-only";
-import { randomUUID } from "crypto";
-import sharp from "sharp";
-import { TosClient, TosServerCode, TosServerError } from "@volcengine/tos-sdk";
+import { TosClient, TosServerCode, TosServerError } from '@volcengine/tos-sdk';
+import { randomUUID } from 'crypto';
+import 'server-only';
+import sharp from 'sharp';
 
-const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
-const ALLOWED_VIDEO_MIME = new Set(["video/mp4", "video/webm", "video/quicktime"]);
+const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
+const ALLOWED_VIDEO_MIME = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_VIDEO_FILE_SIZE = 512 * 1024 * 1024; // 512MB for videos
 const MAX_GENERAL_FILE_SIZE = 512 * 1024 * 1024; // 512MB for general files
@@ -32,7 +32,7 @@ export class UploadError extends Error {
 
   constructor(message: string, statusCode = 400) {
     super(message);
-    this.name = "UploadError";
+    this.name = 'UploadError';
     this.statusCode = statusCode;
   }
 }
@@ -42,11 +42,11 @@ export async function persistImage(file: File) {
   const client = getClient();
 
   if (!ALLOWED_IMAGE_MIME.has(file.type)) {
-    throw new UploadError("仅支持 JPG/PNG/GIF/WebP 图片");
+    throw new UploadError('仅支持 JPG/PNG/GIF/WebP 图片');
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    throw new UploadError("文件大小超出限制 (10MB)");
+    throw new UploadError('文件大小超出限制 (10MB)');
   }
 
   const arrayBuffer = await file.arrayBuffer();
@@ -65,7 +65,7 @@ export async function persistImage(file: File) {
   });
 
   const { data: thumbnailBuffer } = await sharp(buffer, { sequentialRead: true })
-    .resize(400, 400, { fit: "inside", withoutEnlargement: true, fastShrinkOnLoad: true })
+    .resize(400, 400, { fit: 'inside', withoutEnlargement: true, fastShrinkOnLoad: true })
     .webp({ quality: 80 })
     .toBuffer({ resolveWithObject: true });
 
@@ -77,7 +77,7 @@ export async function persistImage(file: File) {
       bucket: config.bucket,
       key: thumbnailKey,
       body: thumbnailBuffer,
-      contentType: "image/webp",
+      contentType: 'image/webp',
     }),
   ]);
 
@@ -92,7 +92,7 @@ export async function persistVideo(file: File) {
   const client = getClient();
 
   if (!ALLOWED_VIDEO_MIME.has(file.type)) {
-    throw new UploadError("仅支持 MP4 / WebM / MOV 视频");
+    throw new UploadError('仅支持 MP4 / WebM / MOV 视频');
   }
 
   if (file.size > MAX_VIDEO_FILE_SIZE) {
@@ -111,7 +111,7 @@ export async function persistVideo(file: File) {
     bucket: config.bucket,
     key: objectKey,
     body: buffer,
-    contentType: file.type || "video/mp4",
+    contentType: file.type || 'video/mp4',
   });
 
   return {
@@ -127,7 +127,7 @@ export async function deleteImageAssets(filename: string) {
   const keys = [buildObjectKey(filename, config), buildThumbnailKey(filename, config)];
 
   await Promise.all(
-    keys.map(async (key) => {
+    keys.map(async key => {
       try {
         await client.deleteObject({ bucket: config.bucket, key });
       } catch (error) {
@@ -135,7 +135,7 @@ export async function deleteImageAssets(filename: string) {
           throw error;
         }
       }
-    }),
+    })
   );
 }
 
@@ -179,27 +179,33 @@ function getConfig(): StorageConfig {
   const bucket = process.env.TOS_BUCKET;
 
   if (!accessKeyId || !secretAccessKey || !region || !endpoint || !bucket) {
-    throw new ConfigurationError("TOS 存储配置缺失，请检查 AccessKey、SecretKey、Region、Endpoint 与 Bucket 设置");
+    throw new ConfigurationError(
+      'TOS 存储配置缺失，请检查 AccessKey、SecretKey、Region、Endpoint 与 Bucket 设置'
+    );
   }
 
   const uploadPrefix = sanitizePrefix(
-    process.env.TOS_UPLOAD_PREFIX ?? process.env.NEXT_PUBLIC_TOS_UPLOAD_PREFIX ?? "uploads/",
+    process.env.TOS_UPLOAD_PREFIX ?? process.env.NEXT_PUBLIC_TOS_UPLOAD_PREFIX ?? 'uploads/'
   );
 
   const thumbnailPrefix = sanitizePrefix(
-    process.env.TOS_THUMBNAIL_PREFIX ?? process.env.NEXT_PUBLIC_TOS_THUMBNAIL_PREFIX ?? `${uploadPrefix}thumbnails/`,
+    process.env.TOS_THUMBNAIL_PREFIX ??
+      process.env.NEXT_PUBLIC_TOS_THUMBNAIL_PREFIX ??
+      `${uploadPrefix}thumbnails/`
   );
 
   const filesPrefix = sanitizePrefix(
-    process.env.TOS_FILES_PREFIX ?? process.env.NEXT_PUBLIC_TOS_FILES_PREFIX ?? "files/",
+    process.env.TOS_FILES_PREFIX ?? process.env.NEXT_PUBLIC_TOS_FILES_PREFIX ?? 'files/'
   );
 
   const publicBaseUrl = sanitizeBaseUrl(
-    process.env.NEXT_PUBLIC_TOS_BASE_URL ?? process.env.TOS_PUBLIC_BASE_URL ?? "",
+    process.env.NEXT_PUBLIC_TOS_BASE_URL ?? process.env.TOS_PUBLIC_BASE_URL ?? ''
   );
 
   if (!publicBaseUrl) {
-    throw new ConfigurationError("未配置 NEXT_PUBLIC_TOS_BASE_URL 或 TOS_PUBLIC_BASE_URL，用于生成图片外链");
+    throw new ConfigurationError(
+      '未配置 NEXT_PUBLIC_TOS_BASE_URL 或 TOS_PUBLIC_BASE_URL，用于生成图片外链'
+    );
   }
 
   cachedConfig = {
@@ -243,7 +249,7 @@ async function getObjectBuffer(key: string) {
   const response = await client.getObjectV2({
     bucket: config.bucket,
     key,
-    dataType: "buffer",
+    dataType: 'buffer',
   });
 
   return response.data.content;
@@ -283,7 +289,7 @@ export async function persistFile(file: File) {
     bucket: config.bucket,
     key: objectKey,
     body: buffer,
-    contentType: file.type || "application/octet-stream",
+    contentType: file.type || 'application/octet-stream',
   });
 
   return {
@@ -332,18 +338,22 @@ function getExtensionFromFileName(filename: string) {
   if (match?.[1]) {
     return `.${match[1].toLowerCase()}`;
   }
-  return "";
+  return '';
 }
 
 // ========= 直传/直下签名 =========
-export function buildFilesStorageKey(parts: { filesetId: number | string; fileId: number | string; name?: string }) {
+export function buildFilesStorageKey(parts: {
+  filesetId: number | string;
+  fileId: number | string;
+  name?: string;
+}) {
   const config = getConfig();
   const base = `${config.filesPrefix}${parts.filesetId}/${parts.fileId}`;
   return parts.name ? `${base}-${sanitizeName(parts.name)}` : base;
 }
 
 function sanitizeName(name: string) {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
 export async function getPresignedPutUrl(storageKey: string, mime: string, size?: number) {
@@ -353,7 +363,7 @@ export async function getPresignedPutUrl(storageKey: string, mime: string, size?
   const url = client.getPreSignedUrl({
     bucket: config.bucket,
     key: storageKey,
-    method: "PUT",
+    method: 'PUT',
     expires,
     response: { contentType: mime },
   });
@@ -368,7 +378,7 @@ export async function getPresignedGetUrl(storageKey: string, attachmentName?: st
   const url = client.getPreSignedUrl({
     bucket: config.bucket,
     key: storageKey,
-    method: "GET",
+    method: 'GET',
     expires,
     response: {
       contentDisposition: attachmentName ? `attachment; filename="${attachmentName}"` : undefined,
@@ -381,18 +391,20 @@ export async function getPresignedGetUrl(storageKey: string, attachmentName?: st
  * Get a presigned GET url with inline content-disposition for general files.
  * Useful for previewing PDFs in-browser without triggering download.
  */
-export async function getPresignedInlineFileUrl(filename: string, originalName?: string, mime?: string) {
+export async function getPresignedInlineFileUrl(
+  filename: string,
+  originalName?: string,
+  mime?: string
+) {
   const config = getConfig();
   const client = getClient();
   const expires = config.presignExpiresSeconds ?? 900;
   const key = buildFileObjectKey(filename, config);
-  const contentDisposition = originalName
-    ? `inline; filename="${originalName}"`
-    : "inline";
+  const contentDisposition = originalName ? `inline; filename="${originalName}"` : 'inline';
   const url = client.getPreSignedUrl({
     bucket: config.bucket,
     key,
-    method: "GET",
+    method: 'GET',
     expires,
     response: {
       contentDisposition,
@@ -409,10 +421,10 @@ export async function getPresignedInlineUrl(storageKey: string) {
   const url = client.getPreSignedUrl({
     bucket: config.bucket,
     key: storageKey,
-    method: "GET",
+    method: 'GET',
     expires,
     response: {
-      contentDisposition: "inline",
+      contentDisposition: 'inline',
     },
   });
   return url;
@@ -432,31 +444,31 @@ export async function getFileBuffer(filename: string) {
  */
 export function guessMimeFromFilename(name: string) {
   const lower = name.toLowerCase();
-  if (lower.endsWith(".pdf")) return "application/pdf";
-  if (lower.endsWith(".png")) return "image/png";
-  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-  if (lower.endsWith(".gif")) return "image/gif";
-  if (lower.endsWith(".webp")) return "image/webp";
-  if (lower.endsWith(".txt")) return "text/plain";
-  if (lower.endsWith(".md")) return "text/markdown";
-  return "application/octet-stream";
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.txt')) return 'text/plain';
+  if (lower.endsWith('.md')) return 'text/markdown';
+  return 'application/octet-stream';
 }
 
 function sanitizePrefix(input: string) {
   const trimmed = input.trim();
-  if (!trimmed) return "";
-  const withoutLeading = trimmed.replace(/^\/+/, "");
-  return withoutLeading.endsWith("/") ? withoutLeading : `${withoutLeading}/`;
+  if (!trimmed) return '';
+  const withoutLeading = trimmed.replace(/^\/+/, '');
+  return withoutLeading.endsWith('/') ? withoutLeading : `${withoutLeading}/`;
 }
 
 function sanitizeBaseUrl(input: string) {
   const trimmed = input.trim();
-  return trimmed.replace(/\/+$/, "");
+  return trimmed.replace(/\/+$/, '');
 }
 
 function joinUrl(base: string, path: string) {
   if (!base) return path;
-  const normalizedPath = path.replace(/^\/+/, "");
+  const normalizedPath = path.replace(/^\/+/, '');
   return `${base}/${normalizedPath}`;
 }
 
@@ -472,22 +484,22 @@ function getExtensionFromFile(file: File) {
 
 function getExtensionFromMime(mime: string) {
   switch (mime) {
-    case "image/jpeg":
-      return ".jpg";
-    case "image/png":
-      return ".png";
-    case "image/gif":
-      return ".gif";
-    case "image/webp":
-      return ".webp";
-    case "video/mp4":
-      return ".mp4";
-    case "video/webm":
-      return ".webm";
-    case "video/quicktime":
-      return ".mov";
+    case 'image/jpeg':
+      return '.jpg';
+    case 'image/png':
+      return '.png';
+    case 'image/gif':
+      return '.gif';
+    case 'image/webp':
+      return '.webp';
+    case 'video/mp4':
+      return '.mp4';
+    case 'video/webm':
+      return '.webm';
+    case 'video/quicktime':
+      return '.mov';
     default:
-      return "";
+      return '';
   }
 }
 

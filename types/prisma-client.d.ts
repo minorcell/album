@@ -1,9 +1,9 @@
-declare module "@prisma/client" {
-  export type CategoryVisibility = "private" | "internal" | "public";
-  export type FileSetVisibility = "private" | "internal" | "public";
-  export type UserRole = "admin" | "member";
-  export type UserStatus = "pending" | "active" | "rejected";
-  export type MediaType = "image" | "video";
+declare module '@prisma/client' {
+  export type CategoryVisibility = 'private' | 'internal' | 'public';
+  export type FileSetVisibility = 'private' | 'internal' | 'public';
+  export type UserRole = 'admin' | 'member';
+  export type UserStatus = 'pending' | 'active' | 'rejected';
+  export type MediaType = 'image' | 'video';
 
   export namespace Prisma {
     export type CategoryWhereInput = Record<string, unknown>;

@@ -1,20 +1,24 @@
-import Link from "next/link"
-import Image from "next/image"
+import { SearchTrigger } from '@/components/search-trigger';
+import { SortToggle } from '@/components/sort-toggle';
+import { Card } from '@/components/ui/card';
+import { UploadDialog } from '@/components/upload-dialog';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { getPublicThumbnailUrl } from '@/lib/storage';
+import type { CategoryVisibility, Prisma } from '@prisma/client';
+import { Images } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 
-import type { Prisma, CategoryVisibility } from "@prisma/client"
-import { prisma } from "@/lib/db"
-import { Card } from "@/components/ui/card"
-import { UploadDialog } from "@/components/upload-dialog"
-import { Images } from "lucide-react"
-import { auth } from "@/lib/auth"
-import { getPublicThumbnailUrl } from "@/lib/storage"
-import { SearchTrigger } from "@/components/search-trigger"
-import { SortToggle } from "@/components/sort-toggle"
-
-export default async function HomePage({ searchParams }: { searchParams?: Promise<{ [key: string]: string | string[] | undefined }> }) {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const params = (await searchParams) ?? {};
-  const sort = (typeof params["sort"] === "string" ? params["sort"] : undefined) === "asc" ? "asc" : "desc";
-  const session = await auth()
+  const sort =
+    (typeof params['sort'] === 'string' ? params['sort'] : undefined) === 'asc' ? 'asc' : 'desc';
+  const session = await auth();
   type CategoryCard = {
     id: number;
     name: string;
@@ -23,13 +27,13 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
     createdAt: Date;
     photos: Array<{ filename: string; createdAt: Date }>;
     _count: { photos: number };
-  }
-  const internalVisibilities: CategoryVisibility[] = ["internal", "public"]
+  };
+  const internalVisibilities: CategoryVisibility[] = ['internal', 'public'];
   const where: Prisma.CategoryWhereInput = !session?.user
-    ? { visibility: "public" }
-    : session.user.role === "admin"
+    ? { visibility: 'public' }
+    : session.user.role === 'admin'
       ? {}
-      : { visibility: { in: internalVisibilities } }
+      : { visibility: { in: internalVisibilities } };
 
   const categories = (await prisma.category.findMany({
     where,
@@ -45,19 +49,17 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
         },
       },
     },
-  })) as CategoryCard[]
+  })) as CategoryCard[];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
-          <div className="flex items-center gap-2 text-foreground">
-            <Images className="h-6 w-6 text-primary" />
+          <div className="text-foreground flex items-center gap-2">
+            <Images className="text-primary h-6 w-6" />
             <h1 className="text-2xl font-semibold tracking-tight">相册</h1>
           </div>
-          <p className="text-sm text-muted-foreground">
-            查看你的相册集、上传照片。
-          </p>
+          <p className="text-muted-foreground text-sm">查看你的相册集、上传照片。</p>
         </div>
         <div className="flex items-center gap-2">
           <SearchTrigger />
@@ -66,7 +68,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
         {session?.user && categories.length > 0 && (
           <div className="flex items-center gap-2">
             <UploadDialog
-              categories={categories.map((category) => ({
+              categories={categories.map(category => ({
                 id: category.id,
                 name: category.name,
               }))}
@@ -82,24 +84,20 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
         <EmptyState />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
+          {categories.map(category => (
             <Link key={category.id} href={`/album/${category.id}`}>
               <Card className="group relative h-64 overflow-hidden border p-0 transition hover:shadow-xl">
                 {category.photos[0] ? (
                   <ImageFill filename={category.photos[0].filename} />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-muted-foreground/20">
-                    <span className="text-sm text-muted-foreground">
-                      暂无照片
-                    </span>
+                  <div className="from-muted to-muted-foreground/20 flex h-full w-full items-center justify-center bg-gradient-to-br">
+                    <span className="text-muted-foreground text-sm">暂无照片</span>
                   </div>
                 )}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 text-white">
                   <div className="flex items-center justify-between text-sm font-medium">
                     <span>{category.name}</span>
-                    <span className="text-xs text-white/80">
-                      {category._count.photos} 张
-                    </span>
+                    <span className="text-xs text-white/80">{category._count.photos} 张</span>
                   </div>
                   {category.description && (
                     <p className="mt-2 line-clamp-2 text-xs text-white/80">
@@ -113,7 +111,7 @@ export default async function HomePage({ searchParams }: { searchParams?: Promis
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function ImageFill({ filename }: { filename: string }) {
@@ -129,16 +127,16 @@ function ImageFill({ filename }: { filename: string }) {
         unoptimized
       />
     </div>
-  )
+  );
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-muted-foreground">
-      <Images className="h-10 w-10 text-primary" />
+    <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10">
+      <Images className="text-primary h-10 w-10" />
       <p>暂无相册，请先在控制台中创建分类。</p>
     </div>
-  )
+  );
 }
 
 // client-only search trigger moved to components/search-trigger.tsx

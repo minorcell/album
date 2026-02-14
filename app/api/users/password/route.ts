@@ -1,25 +1,24 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import bcrypt from "bcryptjs";
-
-import { requireAdmin } from "@/lib/auth-guards";
-import { prisma } from "@/lib/db";
+import { requireAdmin } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const resetPasswordSchema = z.object({
   userId: z.number().int(),
-  newPassword: z.string().min(6, "密码至少 6 位"),
+  newPassword: z.string().min(6, '密码至少 6 位'),
 });
 
 export async function POST(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = resetPasswordSchema.safeParse(body);
 
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;
-    const errorMessage = Object.values(errors).flat()[0] || "请求参数错误";
+    const errorMessage = Object.values(errors).flat()[0] || '请求参数错误';
     return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
   });
 
   if (!user) {
-    return NextResponse.json({ error: "用户不存在" }, { status: 404 });
+    return NextResponse.json({ error: '用户不存在' }, { status: 404 });
   }
 
   // 加密新密码
@@ -43,5 +42,5 @@ export async function POST(request: Request) {
     data: { password: hashedPassword },
   });
 
-  return NextResponse.json({ success: true, message: "密码重置成功" });
+  return NextResponse.json({ success: true, message: '密码重置成功' });
 }

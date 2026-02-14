@@ -1,10 +1,29 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { FileIcon, Download, Trash2, Eye, Image as ImageIcon, Video, Music, FileText, Archive, Code } from "lucide-react";
-import { FileItem, formatFileSize } from "./types";
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Archive,
+  Code,
+  Download,
+  Eye,
+  FileIcon,
+  FileText,
+  Image as ImageIcon,
+  Music,
+  Trash2,
+  Video,
+} from 'lucide-react';
+
+import { FileItem, formatFileSize } from './types';
 
 export function FilesTable({
   files,
@@ -20,18 +39,19 @@ export function FilesTable({
   onDelete: (id: number) => void;
 }) {
   function renderTypeIcon(mime: string) {
-    const cls = "h-4 w-4 text-muted-foreground";
-    if (mime.startsWith("image/")) return <ImageIcon className={cls} />;
-    if (mime.startsWith("video/")) return <Video className={cls} />;
-    if (mime.startsWith("audio/")) return <Music className={cls} />;
-    if (mime === "application/pdf") return <FileText className={cls} />;
+    const cls = 'h-4 w-4 text-muted-foreground';
+    if (mime.startsWith('image/')) return <ImageIcon className={cls} />;
+    if (mime.startsWith('video/')) return <Video className={cls} />;
+    if (mime.startsWith('audio/')) return <Music className={cls} />;
+    if (mime === 'application/pdf') return <FileText className={cls} />;
     if (/zip|tar|rar/.test(mime)) return <Archive className={cls} />;
-    if (mime.startsWith("text/") || /json|xml|yaml|javascript/.test(mime)) return <Code className={cls} />;
+    if (mime.startsWith('text/') || /json|xml|yaml|javascript/.test(mime))
+      return <Code className={cls} />;
     return <FileIcon className={cls} />;
   }
 
   return (
-    <div className="rounded-md border overflow-x-auto">
+    <div className="overflow-x-auto rounded-md border">
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -50,33 +70,33 @@ export function FilesTable({
         <TableBody>
           {files.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                {loading ? "加载中..." : "暂无文件"}
+              <TableCell colSpan={5} className="text-muted-foreground h-24 text-center">
+                {loading ? '加载中...' : '暂无文件'}
               </TableCell>
             </TableRow>
           ) : (
-            files.map((file) => (
+            files.map(file => (
               <TableRow key={file.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {renderTypeIcon(file.mimeType)}
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate max-w-[40ch]" title={file.originalName}>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="max-w-[40ch] truncate font-medium" title={file.originalName}>
                         {file.originalName}
                       </span>
                       {file.description && (
-                        <span className="text-xs text-muted-foreground">{file.description}</span>
+                        <span className="text-muted-foreground text-xs">{file.description}</span>
                       )}
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  <span className="inline-block truncate max-w-[10ch]" title={file.mimeType}>
-                    {file.mimeType.split("/")[1]?.toUpperCase() || "FILE"}
+                <TableCell className="text-muted-foreground text-sm">
+                  <span className="inline-block max-w-[10ch] truncate" title={file.mimeType}>
+                    {file.mimeType.split('/')[1]?.toUpperCase() || 'FILE'}
                   </span>
                 </TableCell>
                 <TableCell className="text-sm">{formatFileSize(file.size)}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-muted-foreground text-sm">
                   {new Date(file.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
@@ -88,14 +108,19 @@ export function FilesTable({
                       variant="ghost"
                       size="sm"
                       title="下载/打开"
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
-                        window.open(file.url, "_blank");
+                        window.open(file.url, '_blank');
                       }}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm" title="删除" onClick={() => onDelete(file.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="删除"
+                      onClick={() => onDelete(file.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>

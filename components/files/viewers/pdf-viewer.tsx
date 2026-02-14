@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import React, { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -11,17 +11,17 @@ declare global {
 
 async function ensurePdfJsLoaded(workerSrc?: string) {
   if (window.pdfjsLib) return window.pdfjsLib;
-  const scriptUrl = "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js";
-  const workerUrl = workerSrc ?? "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  const scriptUrl = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js';
+  const workerUrl = workerSrc ?? 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
   await new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
+    const script = document.createElement('script');
     script.src = scriptUrl;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load PDF.js"));
+    script.onerror = () => reject(new Error('Failed to load PDF.js'));
     document.head.appendChild(script);
   });
-  if (!window.pdfjsLib) throw new Error("PDF.js not available after loading script");
+  if (!window.pdfjsLib) throw new Error('PDF.js not available after loading script');
   window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
   return window.pdfjsLib;
 }
@@ -48,7 +48,7 @@ export function PdfViewer({ src }: { src: string }) {
         // Render all pages for continuous scroll
         await renderAllPages(doc, heightRatio);
       } catch (e: any) {
-        setError(e?.message || "无法加载 PDF 内容");
+        setError(e?.message || '无法加载 PDF 内容');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -65,7 +65,7 @@ export function PdfViewer({ src }: { src: string }) {
   async function renderAllPages(doc: any, ratio: number) {
     const container = containerRef.current;
     if (!container) return;
-    container.innerHTML = "";
+    container.innerHTML = '';
     for (let num = 1; num <= doc.numPages; num++) {
       const page = await doc.getPage(num);
       // Fit height: compute scale so page height ~= viewer height * ratio
@@ -73,16 +73,16 @@ export function PdfViewer({ src }: { src: string }) {
       const baseViewport = page.getViewport({ scale: 1 });
       const fitScale = (viewerHeight * ratio) / baseViewport.height;
       const viewport = page.getViewport({ scale: fitScale });
-      const pageWrapper = document.createElement("div");
-      pageWrapper.className = "mb-4 flex justify-center";
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
+      const pageWrapper = document.createElement('div');
+      pageWrapper.className = 'mb-4 flex justify-center';
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
       if (!context) continue;
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       // CSS scaling: ensure height-based display and auto width for aspect ratio
       canvas.style.height = `${Math.round(viewerHeight * ratio)}px`;
-      canvas.style.width = "auto";
+      canvas.style.width = 'auto';
       pageWrapper.appendChild(canvas);
       container.appendChild(pageWrapper);
       await page.render({ canvasContext: context, viewport }).promise;
@@ -102,24 +102,34 @@ export function PdfViewer({ src }: { src: string }) {
         renderAllPages(pdfDocRef.current, heightRatio);
       }
     }
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [heightRatio]);
 
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex items-center gap-2 border-b p-2">
-        <span className="text-sm text-muted-foreground">共 {pageCount} 页 · 高度比例 {Math.round(heightRatio * 100)}%</span>
+        <span className="text-muted-foreground text-sm">
+          共 {pageCount} 页 · 高度比例 {Math.round(heightRatio * 100)}%
+        </span>
         <div className="ml-auto flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => zoom(-0.1)}>-</Button>
-          <Button variant="outline" size="sm" onClick={() => zoom(0.1)}>+</Button>
+          <Button variant="outline" size="sm" onClick={() => zoom(-0.1)}>
+            -
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => zoom(0.1)}>
+            +
+          </Button>
         </div>
       </div>
       <div className="flex-1 overflow-auto p-2">
         {loading ? (
-          <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">加载中...</div>
+          <div className="text-muted-foreground flex h-full w-full items-center justify-center text-sm">
+            加载中...
+          </div>
         ) : error ? (
-          <div className="flex h-full w-full items-center justify-center text-sm text-destructive">{error}</div>
+          <div className="text-destructive flex h-full w-full items-center justify-center text-sm">
+            {error}
+          </div>
         ) : (
           <div ref={containerRef} className="mx-auto w-fit" />
         )}

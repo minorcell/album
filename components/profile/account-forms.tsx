@@ -1,13 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
 
 interface AccountFormsProps {
   user: {
@@ -35,14 +34,14 @@ function UserInfoCard({ user }: AccountFormsProps) {
         <CardTitle>账号信息</CardTitle>
         <CardDescription>查看当前账号的基础信息。</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm text-muted-foreground">
+      <CardContent className="text-muted-foreground space-y-3 text-sm">
         <div className="flex items-center justify-between">
           <span>用户名</span>
-          <span className="font-medium text-foreground">{user.username}</span>
+          <span className="text-foreground font-medium">{user.username}</span>
         </div>
         <div className="flex items-center justify-between">
           <span>角色</span>
-          <span className="capitalize text-foreground">{user.role}</span>
+          <span className="text-foreground capitalize">{user.role}</span>
         </div>
         <div className="flex items-center justify-between">
           <span>创建时间</span>
@@ -66,27 +65,27 @@ function UpdateUsernameForm({ defaultUsername }: { defaultUsername: string }) {
     setError(null);
 
     if (!username.trim()) {
-      setError("用户名不能为空");
+      setError('用户名不能为空');
       return;
     }
 
     startTransition(async () => {
       try {
-        const response = await fetch("/api/profile", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ type: "username", username: username.trim() }),
+        const response = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'username', username: username.trim() }),
         });
 
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(payload.error ?? "更新失败");
+          throw new Error(payload.error ?? '更新失败');
         }
 
-        setMessage(payload.message ?? "用户名已更新");
+        setMessage(payload.message ?? '用户名已更新');
         router.refresh();
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "更新失败";
+        const msg = err instanceof Error ? err.message : '更新失败';
         setError(msg);
       }
     });
@@ -105,7 +104,7 @@ function UpdateUsernameForm({ defaultUsername }: { defaultUsername: string }) {
             <Input
               id="profile-username"
               value={username}
-              onChange={(event) => setUsername(event.target.value)}
+              onChange={event => setUsername(event.target.value)}
               placeholder="输入新的用户名"
               maxLength={32}
               required
@@ -124,7 +123,7 @@ function UpdateUsernameForm({ defaultUsername }: { defaultUsername: string }) {
             </Alert>
           )}
           <Button type="submit" disabled={isPending}>
-            {isPending ? "保存中..." : "保存"}
+            {isPending ? '保存中...' : '保存'}
           </Button>
         </form>
       </CardContent>
@@ -133,9 +132,9 @@ function UpdateUsernameForm({ defaultUsername }: { defaultUsername: string }) {
 }
 
 function UpdatePasswordForm() {
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -146,17 +145,17 @@ function UpdatePasswordForm() {
     setError(null);
 
     if (newPassword !== confirmPassword) {
-      setError("两次输入的新密码不一致");
+      setError('两次输入的新密码不一致');
       return;
     }
 
     startTransition(async () => {
       try {
-        const response = await fetch("/api/profile", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: "password",
+            type: 'password',
             currentPassword,
             newPassword,
           }),
@@ -164,15 +163,15 @@ function UpdatePasswordForm() {
 
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(payload.error ?? "修改失败");
+          throw new Error(payload.error ?? '修改失败');
         }
 
-        setMessage(payload.message ?? "密码已更新");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
+        setMessage(payload.message ?? '密码已更新');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "修改失败";
+        const msg = err instanceof Error ? err.message : '修改失败';
         setError(msg);
       }
     });
@@ -193,7 +192,7 @@ function UpdatePasswordForm() {
               type="password"
               toggleable
               value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
+              onChange={event => setCurrentPassword(event.target.value)}
               placeholder="请输入当前密码"
               required
             />
@@ -205,7 +204,7 @@ function UpdatePasswordForm() {
               type="password"
               toggleable
               value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
+              onChange={event => setNewPassword(event.target.value)}
               placeholder="至少 6 位"
               required
             />
@@ -217,7 +216,7 @@ function UpdatePasswordForm() {
               type="password"
               toggleable
               value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
+              onChange={event => setConfirmPassword(event.target.value)}
               placeholder="再次输入新密码"
               required
             />
@@ -235,7 +234,7 @@ function UpdatePasswordForm() {
             </Alert>
           )}
           <Button type="submit" disabled={isPending}>
-            {isPending ? "保存中..." : "保存"}
+            {isPending ? '保存中...' : '保存'}
           </Button>
         </form>
       </CardContent>

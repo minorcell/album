@@ -1,20 +1,19 @@
-"use client";
+'use client';
 
-import { FormEvent, useState } from "react";
-import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { LoadingButton } from "@/components/loading-button";
+import { LoadingButton } from '@/components/loading-button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent, useState } from 'react';
 
 export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/";
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const callbackUrl = params.get('callbackUrl') ?? '/';
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pendingHint, setPendingHint] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,19 +25,21 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
     try {
       setPendingHint(null);
       // 先检查账户状态，避免不必要的登录尝试
-      const check = await fetch("/api/users/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const check = await fetch('/api/users/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username }),
-      }).then((r) => r.json()).catch(() => ({}));
+      })
+        .then(r => r.json())
+        .catch(() => ({}));
 
-      if (check?.status === "pending") {
-        setPendingHint("账户待审核，请等待管理员通过");
+      if (check?.status === 'pending') {
+        setPendingHint('账户待审核，请等待管理员通过');
         setIsLoading(false);
         return;
       }
 
-      const response = await signIn("credentials", {
+      const response = await signIn('credentials', {
         username,
         password,
         redirect: false,
@@ -46,11 +47,11 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
       });
 
       if (response?.error) {
-        if (response.error.includes("待审核") || response.error.includes("审核")) {
+        if (response.error.includes('待审核') || response.error.includes('审核')) {
           setError(null);
-          setPendingHint("账户待审核，请等待管理员通过");
+          setPendingHint('账户待审核，请等待管理员通过');
         } else {
-          setError("用户名或密码错误");
+          setError('用户名或密码错误');
         }
         setIsLoading(false);
         return;
@@ -71,7 +72,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
         <Input
           id="username"
           value={username}
-          onChange={(event) => setUsername(event.target.value)}
+          onChange={event => setUsername(event.target.value)}
           placeholder="请输入用户名"
           required
         />
@@ -83,7 +84,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void } = {}) {
           type="password"
           toggleable
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          onChange={event => setPassword(event.target.value)}
           placeholder="请输入密码"
           required
         />

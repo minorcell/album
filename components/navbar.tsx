@@ -1,35 +1,29 @@
-import Link from "next/link"
-
-import { auth } from "@/lib/auth"
-import { BRAND_FULL } from "@/lib/config"
-import { Button } from "@/components/ui/button"
-import { UserMenu } from "@/components/user-menu"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu } from "lucide-react"
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { UserMenu } from '@/components/user-menu';
+import { auth } from '@/lib/auth';
+import { BRAND_FULL } from '@/lib/config';
+import { Menu } from 'lucide-react';
+import Link from 'next/link';
 
 export async function Navbar() {
-  const session = await auth()
-  const userRole = session?.user?.role ?? "guest"
-  const isAuthenticated = Boolean(session?.user)
+  const session = await auth();
+  const userRole = session?.user?.role ?? 'guest';
+  const isAuthenticated = Boolean(session?.user);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 border-b backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link
           href="/"
           className="flex items-center gap-3 text-base font-semibold md:text-lg"
-          style={{ fontFamily: "var(--font-brand)", letterSpacing: "0.3em" }}
+          style={{ fontFamily: 'var(--font-brand)', letterSpacing: '0.3em' }}
         >
-          <span className="uppercase text-primary">{BRAND_FULL}</span>
+          <span className="text-primary uppercase">{BRAND_FULL}</span>
         </Link>
 
-        <nav className="hidden items-center gap-3 text-sm text-muted-foreground md:flex">
+        <nav className="text-muted-foreground hidden items-center gap-3 text-sm md:flex">
           <NavbarLinks isAuthenticated={isAuthenticated} userRole={userRole} />
         </nav>
 
@@ -68,29 +62,25 @@ export async function Navbar() {
         </div>
       </div>
     </header>
-  )
+  );
 }
 
 function NavbarLinks({
   isAuthenticated,
   userRole,
-  orientation = "horizontal",
+  orientation = 'horizontal',
 }: {
-  isAuthenticated: boolean
-  userRole: string
-  orientation?: "horizontal" | "vertical"
+  isAuthenticated: boolean;
+  userRole: string;
+  orientation?: 'horizontal' | 'vertical';
 }) {
   const baseClass =
-    orientation === "horizontal"
-      ? "flex items-center gap-1 transition hover:text-primary"
-      : "flex items-center gap-2 text-muted-foreground transition hover:text-primary"
+    orientation === 'horizontal'
+      ? 'flex items-center gap-1 transition hover:text-primary'
+      : 'flex items-center gap-2 text-muted-foreground transition hover:text-primary';
 
   const Wrapper = ({ children }: { children: React.ReactNode }) =>
-    orientation === "vertical" ? (
-      <SheetClose asChild>{children}</SheetClose>
-    ) : (
-      <>{children}</>
-    )
+    orientation === 'vertical' ? <SheetClose asChild>{children}</SheetClose> : <>{children}</>;
   return (
     <>
       <Wrapper>
@@ -110,7 +100,7 @@ function NavbarLinks({
           </Link>
         </Wrapper>
       )}
-      {userRole === "admin" && (
+      {userRole === 'admin' && (
         <Wrapper>
           <Link className={baseClass} href="/admin">
             控制台
@@ -123,5 +113,5 @@ function NavbarLinks({
         </Link>
       </Wrapper>
     </>
-  )
+  );
 }

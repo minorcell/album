@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { SearchDialog } from "@/components/search-dialog";
+import { SearchDialog } from '@/components/search-dialog';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 
 export function SearchTrigger({ categoryId }: { categoryId?: number }) {
   const [open, setOpen] = useState(false);
@@ -16,4 +16,3 @@ export function SearchTrigger({ categoryId }: { categoryId?: number }) {
     </>
   );
 }
-

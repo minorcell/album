@@ -1,13 +1,20 @@
-"use client";
+'use client';
 
-import { signOut } from "next-auth/react";
-import { Session } from "next-auth";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Session } from 'next-auth';
+import { signOut } from 'next-auth/react';
 
 export function UserMenu({ session }: { session: Session }) {
-  const username = session.user?.name ?? session.user?.id ?? "用户";
-  const role = session.user?.role ?? "member";
+  const username = session.user?.name ?? session.user?.id ?? '用户';
+  const role = session.user?.role ?? 'member';
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -18,7 +25,7 @@ export function UserMenu({ session }: { session: Session }) {
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>
           <p className="font-medium">{username}</p>
-          <p className="text-xs text-muted-foreground">{role}</p>
+          <p className="text-muted-foreground text-xs">{role}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -26,7 +33,7 @@ export function UserMenu({ session }: { session: Session }) {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onSelect={(event) => {
+          onSelect={event => {
             event.preventDefault();
             void signOut();
           }}

@@ -1,23 +1,23 @@
-import type { NextAuthOptions } from "next-auth";
-import { getServerSession } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
+import bcrypt from 'bcryptjs';
+import type { NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 
-import { prisma } from "./db";
+import { prisma } from './db';
 
 export const authOptions: NextAuthOptions = {
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
   },
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
   providers: [
     Credentials({
-      name: "Credentials",
+      name: 'Credentials',
       credentials: {
-        username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" },
+        username: { label: 'Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) {
@@ -38,12 +38,12 @@ export const authOptions: NextAuthOptions = {
         }
 
         // 检查账户状态
-        if (user.status === "pending") {
-          throw new Error("账户待审核，请等待管理员通过");
+        if (user.status === 'pending') {
+          throw new Error('账户待审核，请等待管理员通过');
         }
 
-        if (user.status === "rejected") {
-          throw new Error("账户已被拒绝，无法登录");
+        if (user.status === 'rejected') {
+          throw new Error('账户已被拒绝，无法登录');
         }
 
         return {
@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
-        session.user.role = (token.role as string | undefined) ?? "member";
+        session.user.role = (token.role as string | undefined) ?? 'member';
         session.user.name = token.name ?? session.user.name;
       }
       return session;

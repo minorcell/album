@@ -1,10 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useState } from 'react';
 
 export function FilesUploadDialog({
   open,
@@ -30,7 +37,7 @@ export function FilesUploadDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={open} onOpenChange={open => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>上传文件</DialogTitle>
@@ -39,7 +46,11 @@ export function FilesUploadDialog({
         <div className="space-y-4">
           <div>
             <Label>选择文件</Label>
-            <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} disabled={uploading} />
+            <Input
+              type="file"
+              onChange={e => setFile(e.target.files?.[0] || null)}
+              disabled={uploading}
+            />
           </div>
         </div>
         <DialogFooter>
@@ -47,7 +58,7 @@ export function FilesUploadDialog({
             取消
           </Button>
           <Button onClick={handleSubmit} disabled={!file || uploading}>
-            {uploading ? "上传中..." : "上传"}
+            {uploading ? '上传中...' : '上传'}
           </Button>
         </DialogFooter>
       </DialogContent>

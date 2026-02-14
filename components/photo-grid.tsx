@@ -1,26 +1,32 @@
-"use client";
+'use client';
 
-import { Fragment, useCallback, useMemo, useState } from "react";
-import Image from "next/image";
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import { useRouter } from "next/navigation";
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Play } from "lucide-react";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
+import { Play } from 'lucide-react';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 
 interface PhotoItem {
   id: number;
@@ -30,7 +36,7 @@ interface PhotoItem {
   createdAt: string;
   uploader: string;
   thumbnailUrl: string | null;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
   fileUrl: string;
   isOwner: boolean;
 }
@@ -39,14 +45,14 @@ interface PhotoGridProps {
   photos: PhotoItem[];
   canManageAll?: boolean;
   allowOwnActions?: boolean;
-  downloadStrategy?: "api" | "public";
+  downloadStrategy?: 'api' | 'public';
 }
 
 export function PhotoGrid({
   photos,
   canManageAll = false,
   allowOwnActions = false,
-  downloadStrategy = "api",
+  downloadStrategy = 'api',
 }: PhotoGridProps) {
   const router = useRouter();
   const [activePhoto, setActivePhoto] = useState<PhotoItem | null>(null);
@@ -55,9 +61,9 @@ export function PhotoGrid({
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [zoomLevel, setZoomLevel] = useState<"day" | "month" | "year">("day");
+  const [renameValue, setRenameValue] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [zoomLevel, setZoomLevel] = useState<'day' | 'month' | 'year'>('day');
   const [pinchDistance, setPinchDistance] = useState<number | null>(null);
 
   const groups = useMemo(() => {
@@ -70,24 +76,24 @@ export function PhotoGrid({
       }
     >();
 
-    photos.forEach((photo) => {
+    photos.forEach(photo => {
       const date = new Date(photo.createdAt);
       let key: string;
       let label: string;
 
       switch (zoomLevel) {
-        case "year":
-          key = format(date, "yyyy");
-          label = format(date, "yyyy年", { locale: zhCN });
+        case 'year':
+          key = format(date, 'yyyy');
+          label = format(date, 'yyyy年', { locale: zhCN });
           break;
-        case "month":
-          key = format(date, "yyyy-MM");
-          label = format(date, "yyyy年MM月", { locale: zhCN });
+        case 'month':
+          key = format(date, 'yyyy-MM');
+          label = format(date, 'yyyy年MM月', { locale: zhCN });
           break;
-        case "day":
+        case 'day':
         default:
-          key = format(date, "yyyy-MM-dd");
-          label = format(date, "yyyy年MM月dd日 EEEE", { locale: zhCN });
+          key = format(date, 'yyyy-MM-dd');
+          label = format(date, 'yyyy年MM月dd日 EEEE', { locale: zhCN });
           break;
       }
 
@@ -101,22 +107,22 @@ export function PhotoGrid({
   }, [photos, zoomLevel]);
 
   const selectedPhotos = useMemo(
-    () => photos.filter((photo) => selectedIds.has(photo.id)),
-    [photos, selectedIds],
+    () => photos.filter(photo => selectedIds.has(photo.id)),
+    [photos, selectedIds]
   );
 
   const selectedCount = selectedPhotos.length;
 
   const canManagePhoto = useCallback(
     (photo: PhotoItem) => canManageAll || (allowOwnActions && photo.isOwner),
-    [allowOwnActions, canManageAll],
+    [allowOwnActions, canManageAll]
   );
 
   const allSelectedManageable =
-    selectedCount > 0 && selectedPhotos.every((photo) => canManagePhoto(photo));
+    selectedCount > 0 && selectedPhotos.every(photo => canManagePhoto(photo));
 
   const toggleSelection = useCallback((id: number) => {
-    setSelectedIds((prev) => {
+    setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -135,12 +141,12 @@ export function PhotoGrid({
 
   const handleSelectAll = useCallback(() => {
     setSelectionMode(true);
-    setSelectedIds(new Set(photos.map((photo) => photo.id)));
+    setSelectedIds(new Set(photos.map(photo => photo.id)));
   }, [photos]);
 
   const handleDelete = useCallback(async () => {
     if (selectedCount === 0 || !allSelectedManageable) {
-      setActionError("请选择可删除的媒体");
+      setActionError('请选择可删除的媒体');
       return;
     }
 
@@ -151,19 +157,19 @@ export function PhotoGrid({
     setIsProcessing(true);
     setActionError(null);
     try {
-      const response = await fetch("/api/photos", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedPhotos.map((photo) => photo.id) }),
+      const response = await fetch('/api/photos', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedPhotos.map(photo => photo.id) }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error ?? "删除失败");
+        throw new Error(payload.error ?? '删除失败');
       }
       clearSelection();
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "删除失败";
+      const message = error instanceof Error ? error.message : '删除失败';
       setActionError(message);
     } finally {
       setIsProcessing(false);
@@ -172,17 +178,17 @@ export function PhotoGrid({
 
   const handleRename = useCallback(() => {
     if (selectedCount !== 1) {
-      setActionError("请选择一个媒体进行重命名");
+      setActionError('请选择一个媒体进行重命名');
       return;
     }
 
     const target = selectedPhotos[0];
     if (!canManagePhoto(target)) {
-      setActionError("仅可修改自己上传或有权限的媒体");
+      setActionError('仅可修改自己上传或有权限的媒体');
       return;
     }
 
-    setRenameValue(target.description ?? "");
+    setRenameValue(target.description ?? '');
     setRenameOpen(true);
   }, [canManagePhoto, selectedCount, selectedPhotos]);
 
@@ -195,20 +201,20 @@ export function PhotoGrid({
     setIsProcessing(true);
     setActionError(null);
     try {
-      const response = await fetch("/api/photos", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/photos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: target.id, description: renameValue }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.error ?? "重命名失败");
+        throw new Error(payload.error ?? '重命名失败');
       }
       setRenameOpen(false);
       clearSelection();
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "重命名失败";
+      const message = error instanceof Error ? error.message : '重命名失败';
       setActionError(message);
     } finally {
       setIsProcessing(false);
@@ -217,26 +223,26 @@ export function PhotoGrid({
 
   const handleDownload = useCallback(async () => {
     if (selectedCount === 0) {
-      setActionError("请选择需要下载的媒体");
+      setActionError('请选择需要下载的媒体');
       return;
     }
 
     setIsProcessing(true);
     setActionError(null);
     try {
-      if (downloadStrategy === "api") {
-        const response = await fetch("/api/photos", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids: selectedPhotos.map((photo) => photo.id) }),
+      if (downloadStrategy === 'api') {
+        const response = await fetch('/api/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: selectedPhotos.map(photo => photo.id) }),
         });
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
-          throw new Error(payload.error ?? "下载失败");
+          throw new Error(payload.error ?? '下载失败');
         }
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
+        const link = document.createElement('a');
         link.href = url;
         link.download = `photos-${Date.now()}.zip`;
         document.body.appendChild(link);
@@ -244,18 +250,18 @@ export function PhotoGrid({
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
       } else {
-        selectedPhotos.forEach((photo) => {
-          const link = document.createElement("a");
+        selectedPhotos.forEach(photo => {
+          const link = document.createElement('a');
           link.href = photo.fileUrl;
           link.download = photo.originalName ?? photo.filename;
-          link.rel = "noopener";
+          link.rel = 'noopener';
           document.body.appendChild(link);
           link.click();
           link.remove();
         });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "下载失败";
+      const message = error instanceof Error ? error.message : '下载失败';
       setActionError(message);
     } finally {
       setIsProcessing(false);
@@ -270,28 +276,28 @@ export function PhotoGrid({
         setActivePhoto(photo);
       }
     },
-    [selectionMode, toggleSelection],
+    [selectionMode, toggleSelection]
   );
 
   const handleCopyLink = useCallback((photo: PhotoItem) => {
     navigator.clipboard
       .writeText(photo.fileUrl)
-      .catch(() => setActionError("复制失败，请手动复制"));
+      .catch(() => setActionError('复制失败，请手动复制'));
   }, []);
 
   const handleZoomIn = useCallback(() => {
-    setZoomLevel((prev) => {
-      if (prev === "year") return "month";
-      if (prev === "month") return "day";
-      return "day";
+    setZoomLevel(prev => {
+      if (prev === 'year') return 'month';
+      if (prev === 'month') return 'day';
+      return 'day';
     });
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setZoomLevel((prev) => {
-      if (prev === "day") return "month";
-      if (prev === "month") return "year";
-      return "year";
+    setZoomLevel(prev => {
+      if (prev === 'day') return 'month';
+      if (prev === 'month') return 'year';
+      return 'year';
     });
   }, []);
 
@@ -306,14 +312,14 @@ export function PhotoGrid({
         }
       }
     },
-    [handleZoomIn, handleZoomOut],
+    [handleZoomIn, handleZoomOut]
   );
 
   const handleTouchStart = useCallback((event: React.TouchEvent) => {
     if (event.touches.length === 2) {
       const distance = Math.hypot(
         event.touches[0].clientX - event.touches[1].clientX,
-        event.touches[0].clientY - event.touches[1].clientY,
+        event.touches[0].clientY - event.touches[1].clientY
       );
       setPinchDistance(distance);
     }
@@ -324,7 +330,7 @@ export function PhotoGrid({
       if (event.touches.length === 2 && pinchDistance !== null) {
         const distance = Math.hypot(
           event.touches[0].clientX - event.touches[1].clientX,
-          event.touches[0].clientY - event.touches[1].clientY,
+          event.touches[0].clientY - event.touches[1].clientY
         );
         const delta = distance - pinchDistance;
 
@@ -338,7 +344,7 @@ export function PhotoGrid({
         }
       }
     },
-    [pinchDistance, handleZoomIn, handleZoomOut],
+    [pinchDistance, handleZoomIn, handleZoomOut]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -347,37 +353,37 @@ export function PhotoGrid({
 
   const gridColsClass = useMemo(() => {
     switch (zoomLevel) {
-      case "year":
-        return "sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8";
-      case "month":
-        return "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6";
-      case "day":
+      case 'year':
+        return 'sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
+      case 'month':
+        return 'sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6';
+      case 'day':
       default:
-        return "sm:grid-cols-2 lg:grid-cols-3";
+        return 'sm:grid-cols-2 lg:grid-cols-3';
     }
   }, [zoomLevel]);
 
   const cardPaddingClass = useMemo(() => {
     switch (zoomLevel) {
-      case "year":
-        return "p-1.5";
-      case "month":
-        return "p-2";
-      case "day":
+      case 'year':
+        return 'p-1.5';
+      case 'month':
+        return 'p-2';
+      case 'day':
       default:
-        return "p-3";
+        return 'p-3';
     }
   }, [zoomLevel]);
 
   const textSizeClass = useMemo(() => {
     switch (zoomLevel) {
-      case "year":
-        return "text-xs";
-      case "month":
-        return "text-xs";
-      case "day":
+      case 'year':
+        return 'text-xs';
+      case 'month':
+        return 'text-xs';
+      case 'day':
       default:
-        return "text-sm";
+        return 'text-sm';
     }
   }, [zoomLevel]);
 
@@ -385,63 +391,61 @@ export function PhotoGrid({
     <>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {selectionMode
               ? selectedCount > 0
                 ? `已选择 ${selectedCount} 个媒体`
-                : "点击媒体以选择"
-              : "点击媒体查看详情，或开启选择模式进行批量操作"}
+                : '点击媒体以选择'
+              : '点击媒体查看详情，或开启选择模式进行批量操作'}
           </div>
           {!selectionMode && (
-            <div className="text-xs text-muted-foreground/70">
-              Ctrl+滚轮 或 双指捏合 可缩放视图
-            </div>
+            <div className="text-muted-foreground/70 text-xs">Ctrl+滚轮 或 双指捏合 可缩放视图</div>
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center rounded-md border border-border p-1">
+          <div className="border-border flex items-center rounded-md border p-1">
             <Button
               type="button"
-              variant={zoomLevel === "day" ? "default" : "ghost"}
+              variant={zoomLevel === 'day' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setZoomLevel("day")}
+              onClick={() => setZoomLevel('day')}
               title="按天显示"
             >
               天
             </Button>
             <Button
               type="button"
-              variant={zoomLevel === "month" ? "default" : "ghost"}
+              variant={zoomLevel === 'month' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setZoomLevel("month")}
+              onClick={() => setZoomLevel('month')}
               title="按月显示"
             >
               月
             </Button>
             <Button
               type="button"
-              variant={zoomLevel === "year" ? "default" : "ghost"}
+              variant={zoomLevel === 'year' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setZoomLevel("year")}
+              onClick={() => setZoomLevel('year')}
               title="按年显示"
             >
               年
             </Button>
           </div>
-          <div className="flex items-center rounded-md border border-border p-1">
+          <div className="border-border flex items-center rounded-md border p-1">
             <Button
               type="button"
-              variant={viewMode === "grid" ? "default" : "ghost"}
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode("grid")}
+              onClick={() => setViewMode('grid')}
             >
               网格
             </Button>
             <Button
               type="button"
-              variant={viewMode === "list" ? "default" : "ghost"}
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode("list")}
+              onClick={() => setViewMode('list')}
             >
               列表
             </Button>
@@ -452,7 +456,7 @@ export function PhotoGrid({
             </Button>
           ) : null}
           <Button
-            variant={selectionMode ? "default" : "outline"}
+            variant={selectionMode ? 'default' : 'outline'}
             size="sm"
             onClick={() => {
               if (selectionMode) {
@@ -462,7 +466,7 @@ export function PhotoGrid({
               }
             }}
           >
-            {selectionMode ? "退出选择" : "开始选择"}
+            {selectionMode ? '退出选择' : '开始选择'}
           </Button>
         </div>
       </div>
@@ -487,7 +491,7 @@ export function PhotoGrid({
           >
             全选
           </Button>
-          {(canManageAll || allowOwnActions) ? (
+          {canManageAll || allowOwnActions ? (
             <>
               <Button
                 variant="outline"
@@ -510,7 +514,7 @@ export function PhotoGrid({
         </div>
       ) : null}
 
-      {viewMode === "grid" ? (
+      {viewMode === 'grid' ? (
         <div
           className="space-y-6"
           onWheel={handleWheel}
@@ -518,11 +522,11 @@ export function PhotoGrid({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {groups.map((group) => (
+          {groups.map(group => (
             <div key={group.key} className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground">{group.label}</h3>
-              <div className={cn("grid gap-4", gridColsClass)}>
-                {group.items.map((photo) => {
+              <h3 className="text-muted-foreground text-sm font-medium">{group.label}</h3>
+              <div className={cn('grid gap-4', gridColsClass)}>
+                {group.items.map(photo => {
                   const isSelected = selectedIds.has(photo.id);
                   return (
                     <button
@@ -530,24 +534,24 @@ export function PhotoGrid({
                       type="button"
                       onClick={() => handleRowClick(photo)}
                       className={cn(
-                        "group relative overflow-hidden rounded-xl border border-border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary flex flex-col",
-                        isSelected ? "border-primary ring-2 ring-primary/40" : "hover:shadow-lg",
+                        'group border-border focus-visible:outline-primary relative flex flex-col overflow-hidden rounded-xl border text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+                        isSelected ? 'border-primary ring-primary/40 ring-2' : 'hover:shadow-lg'
                       )}
                     >
                       {selectionMode ? (
-                        <span className="absolute left-2 top-2 z-10">
+                        <span className="absolute top-2 left-2 z-10">
                           <input
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleSelection(photo.id)}
-                            onClick={(event) => event.stopPropagation()}
-                            className="h-4 w-4 rounded border border-input accent-primary"
-                            aria-label={isSelected ? "取消选择" : "选择"}
+                            onClick={event => event.stopPropagation()}
+                            className="border-input accent-primary h-4 w-4 rounded border"
+                            aria-label={isSelected ? '取消选择' : '选择'}
                           />
                         </span>
                       ) : null}
                       <div className="relative aspect-square w-full overflow-hidden bg-black/60">
-                        {photo.mediaType === "video" ? (
+                        {photo.mediaType === 'video' ? (
                           <>
                             <video
                               src={photo.fileUrl}
@@ -571,26 +575,28 @@ export function PhotoGrid({
                             unoptimized
                           />
                         )}
-                        <div className="absolute right-2 top-2 z-10">
+                        <div className="absolute top-2 right-2 z-10">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
                                 className="rounded-md bg-black/50 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={e => e.stopPropagation()}
                               >
                                 操作
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onSelect={() => {
-                                const link = document.createElement("a");
-                                link.href = photo.fileUrl;
-                                link.download = photo.originalName ?? photo.filename;
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                              }}>
+                              <DropdownMenuItem
+                                onSelect={() => {
+                                  const link = document.createElement('a');
+                                  link.href = photo.fileUrl;
+                                  link.download = photo.originalName ?? photo.filename;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  link.remove();
+                                }}
+                              >
                                 下载
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => handleCopyLink(photo)}>
@@ -600,17 +606,27 @@ export function PhotoGrid({
                           </DropdownMenu>
                         </div>
                       </div>
-                      <div className={cn("space-y-1", cardPaddingClass)}>
-                        {zoomLevel === "day" && (
-                          <p className={cn("line-clamp-2 text-muted-foreground", textSizeClass)}>
-                            {photo.description || "无描述"}
+                      <div className={cn('space-y-1', cardPaddingClass)}>
+                        {zoomLevel === 'day' && (
+                          <p className={cn('text-muted-foreground line-clamp-2', textSizeClass)}>
+                            {photo.description || '无描述'}
                           </p>
                         )}
-                        <div className={cn("flex items-center justify-between text-muted-foreground",
-                          zoomLevel === "year" ? "text-[10px]" : "text-xs")}>
-                          {zoomLevel !== "year" && <span className="truncate">{photo.uploader}</span>}
-                          <span className={zoomLevel === "year" ? "mx-auto" : "ml-auto"}>
-                            {format(new Date(photo.createdAt), zoomLevel === "day" ? "HH:mm" : "MM-dd", { locale: zhCN })}
+                        <div
+                          className={cn(
+                            'text-muted-foreground flex items-center justify-between',
+                            zoomLevel === 'year' ? 'text-[10px]' : 'text-xs'
+                          )}
+                        >
+                          {zoomLevel !== 'year' && (
+                            <span className="truncate">{photo.uploader}</span>
+                          )}
+                          <span className={zoomLevel === 'year' ? 'mx-auto' : 'ml-auto'}>
+                            {format(
+                              new Date(photo.createdAt),
+                              zoomLevel === 'day' ? 'HH:mm' : 'MM-dd',
+                              { locale: zhCN }
+                            )}
                           </span>
                         </div>
                       </div>
@@ -632,22 +648,25 @@ export function PhotoGrid({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {groups.map((group) => (
+              {groups.map(group => (
                 <Fragment key={group.key}>
                   <TableRow>
-                    <TableCell colSpan={3} className="bg-muted text-sm font-medium text-muted-foreground">
+                    <TableCell
+                      colSpan={3}
+                      className="bg-muted text-muted-foreground text-sm font-medium"
+                    >
                       {group.label}
                     </TableCell>
                   </TableRow>
-                  {group.items.map((photo) => {
+                  {group.items.map(photo => {
                     const isSelected = selectedIds.has(photo.id);
                     return (
                       <TableRow
                         key={photo.id}
                         onClick={() => handleRowClick(photo)}
                         className={cn(
-                          "cursor-pointer transition hover:bg-muted/60",
-                          isSelected ? "bg-primary/10" : undefined,
+                          'hover:bg-muted/60 cursor-pointer transition',
+                          isSelected ? 'bg-primary/10' : undefined
                         )}
                       >
                         <TableCell>
@@ -657,13 +676,13 @@ export function PhotoGrid({
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => toggleSelection(photo.id)}
-                                onClick={(event) => event.stopPropagation()}
-                                className="h-4 w-4 rounded border border-input accent-primary"
-                                aria-label={isSelected ? "取消选择" : "选择"}
+                                onClick={event => event.stopPropagation()}
+                                className="border-input accent-primary h-4 w-4 rounded border"
+                                aria-label={isSelected ? '取消选择' : '选择'}
                               />
                             ) : null}
                             <div className="relative h-16 w-24 overflow-hidden rounded-md border bg-black/60">
-                              {photo.mediaType === "video" ? (
+                              {photo.mediaType === 'video' ? (
                                 <>
                                   <video
                                     src={photo.fileUrl}
@@ -687,26 +706,28 @@ export function PhotoGrid({
                                   unoptimized
                                 />
                               )}
-                              <div className="absolute right-1 top-1 z-10">
+                              <div className="absolute top-1 right-1 z-10">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <button
                                       type="button"
                                       className="rounded bg-black/50 px-2 py-1 text-[10px] text-white"
-                                      onClick={(e) => e.stopPropagation()}
+                                      onClick={e => e.stopPropagation()}
                                     >
                                       操作
                                     </button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => {
-                                      const link = document.createElement("a");
-                                      link.href = photo.fileUrl;
-                                      link.download = photo.originalName ?? photo.filename;
-                                      document.body.appendChild(link);
-                                      link.click();
-                                      link.remove();
-                                    }}>
+                                    <DropdownMenuItem
+                                      onSelect={() => {
+                                        const link = document.createElement('a');
+                                        link.href = photo.fileUrl;
+                                        link.download = photo.originalName ?? photo.filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        link.remove();
+                                      }}
+                                    >
                                       下载
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleCopyLink(photo)}>
@@ -720,16 +741,22 @@ export function PhotoGrid({
                         </TableCell>
                         <TableCell>
                           <div className="max-w-xl space-y-1">
-                            <p className="text-sm font-medium text-foreground">
+                            <p className="text-foreground text-sm font-medium">
                               {photo.description || photo.originalName || photo.filename}
                             </p>
-                            <p className="text-xs text-muted-foreground">文件：{photo.originalName ?? photo.filename}</p>
+                            <p className="text-muted-foreground text-xs">
+                              文件：{photo.originalName ?? photo.filename}
+                            </p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-muted-foreground text-sm">
                           <div className="space-y-1">
                             <p>上传者：{photo.uploader}</p>
-                            <p>{format(new Date(photo.createdAt), "yyyy-MM-dd HH:mm", { locale: zhCN })}</p>
+                            <p>
+                              {format(new Date(photo.createdAt), 'yyyy-MM-dd HH:mm', {
+                                locale: zhCN,
+                              })}
+                            </p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -744,14 +771,14 @@ export function PhotoGrid({
 
       <Dialog
         open={!!activePhoto}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (!open) {
             setActivePhoto(null);
           }
         }}
       >
         <DialogContent
-          className="!fixed !inset-0 !h-screen !w-screen !max-w-none !translate-x-0 !translate-y-0 !top-0 !left-0 border-none bg-black/90 p-4 text-white sm:p-6 rounded-none"
+          className="!fixed !inset-0 !top-0 !left-0 !h-screen !w-screen !max-w-none !translate-x-0 !translate-y-0 rounded-none border-none bg-black/90 p-4 text-white sm:p-6"
           showCloseButton={false}
         >
           {activePhoto && (
@@ -762,16 +789,20 @@ export function PhotoGrid({
                     {activePhoto.description || activePhoto.filename}
                   </DialogTitle>
                 </DialogHeader>
-                <Button variant="ghost" className="text-white hover:text-white" onClick={() => setActivePhoto(null)}>
+                <Button
+                  variant="ghost"
+                  className="text-white hover:text-white"
+                  onClick={() => setActivePhoto(null)}
+                >
                   关闭
                 </Button>
               </div>
               <div className="relative mt-4 flex flex-1 items-center justify-center overflow-hidden">
-                {activePhoto.mediaType === "video" ? (
+                {activePhoto.mediaType === 'video' ? (
                   <video
                     src={activePhoto.fileUrl}
                     poster={activePhoto.thumbnailUrl ?? undefined}
-                    className="h-full w-full max-h-full max-w-full object-contain"
+                    className="h-full max-h-full w-full max-w-full object-contain"
                     controls
                     playsInline
                     preload="metadata"
@@ -790,14 +821,15 @@ export function PhotoGrid({
               <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-white/80 sm:text-sm">
                 <Badge variant="secondary">上传者：{activePhoto.uploader}</Badge>
                 <Badge variant="outline" className="border-white/40 text-white">
-                  上传时间：{format(new Date(activePhoto.createdAt), "yyyy-MM-dd HH:mm", { locale: zhCN })}
+                  上传时间：
+                  {format(new Date(activePhoto.createdAt), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
                 </Badge>
                 <Button
                   variant="secondary"
                   size="sm"
                   className="ml-auto"
                   onClick={() => {
-                    const link = document.createElement("a");
+                    const link = document.createElement('a');
                     link.href = activePhoto.fileUrl;
                     link.download = activePhoto.originalName ?? activePhoto.filename;
                     document.body.appendChild(link);
@@ -815,10 +847,10 @@ export function PhotoGrid({
 
       <Dialog
         open={renameOpen}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           setRenameOpen(open);
           if (!open) {
-            setRenameValue("");
+            setRenameValue('');
           }
         }}
       >
@@ -833,10 +865,10 @@ export function PhotoGrid({
                 id="photo-new-name"
                 placeholder="输入新的描述"
                 value={renameValue}
-                onChange={(event) => setRenameValue(event.target.value)}
+                onChange={event => setRenameValue(event.target.value)}
                 maxLength={300}
               />
-              <p className="text-xs text-muted-foreground">留空则移除描述。</p>
+              <p className="text-muted-foreground text-xs">留空则移除描述。</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setRenameOpen(false)}>

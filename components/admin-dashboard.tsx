@@ -1,22 +1,41 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { LayoutDashboard, Copy, Trash2 } from "lucide-react";
-import type { CategoryVisibility } from "@prisma/client";
-import { AdminFileSets } from "@/components/admin-filesets";
+import { AdminFileSets } from '@/components/admin-filesets';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import type { CategoryVisibility } from '@prisma/client';
+import { Copy, LayoutDashboard, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
 interface CategoryItem {
   id: number;
@@ -24,14 +43,14 @@ interface CategoryItem {
   description: string | null;
   photoCount: number;
   createdAt: string;
-  visibility: "private" | "internal" | "public";
+  visibility: 'private' | 'internal' | 'public';
 }
 
 interface UserItem {
   id: number;
   username: string;
   role: string;
-  status: "pending" | "active" | "rejected";
+  status: 'pending' | 'active' | 'rejected';
   photoCount: number;
   createdAt: string;
 }
@@ -49,7 +68,7 @@ interface FileSetItem {
   id: number;
   name: string;
   description: string | null;
-  visibility: "private" | "internal" | "public";
+  visibility: 'private' | 'internal' | 'public';
   fileCount: number;
   createdAt: string;
 }
@@ -66,50 +85,50 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const pendingUsers = users.filter((u) => u.status === "pending");
-  const activeUsersInitial = users.filter((u) => u.status === "active");
+  const pendingUsers = users.filter(u => u.status === 'pending');
+  const activeUsersInitial = users.filter(u => u.status === 'active');
   const [activeUsers, setActiveUsers] = useState<UserItem[]>(activeUsersInitial);
 
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryDescription, setCategoryDescription] = useState("");
-  const [categoryVisibility, setCategoryVisibility] = useState<CategoryVisibility>("internal");
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryVisibility, setCategoryVisibility] = useState<CategoryVisibility>('internal');
 
   const [selectedUserRole, setSelectedUserRole] = useState<Record<number, string>>({});
-  const [userQuery, setUserQuery] = useState("");
+  const [userQuery, setUserQuery] = useState('');
   const [userPage, setUserPage] = useState(1);
   const [userPageSize, setUserPageSize] = useState(20);
   const [userTotal, setUserTotal] = useState<number>(activeUsersInitial.length);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
-  const [filterRole, setFilterRole] = useState<string>("");
+  const [filterRole, setFilterRole] = useState<string>('');
 
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
   const [deleteTransferUserId, setDeleteTransferUserId] = useState<number | null>(null);
   const [deletePhotosDirectly, setDeletePhotosDirectly] = useState(false);
 
   const [resettingPasswordUserId, setResettingPasswordUserId] = useState<number | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   const [shareCategoryId, setShareCategoryId] = useState<number | null>(null);
-  const [sharePassword, setSharePassword] = useState("");
-  const [expireHours, setExpireHours] = useState("24");
+  const [sharePassword, setSharePassword] = useState('');
+  const [expireHours, setExpireHours] = useState('24');
   const [shareMessage, setShareMessage] = useState<string | null>(null);
   const [copySuccessMessage, setCopySuccessMessage] = useState<string | null>(null);
 
   const shareBaseUrl = useMemo(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       return `${window.location.origin}/share/`;
     }
-    return "/share/";
+    return '/share/';
   }, []);
 
   const resetCategoryForm = () => {
     setEditingCategoryId(null);
-    setCategoryName("");
-    setCategoryDescription("");
-    setCategoryVisibility("internal");
+    setCategoryName('');
+    setCategoryDescription('');
+    setCategoryVisibility('internal');
   };
 
   const handleCategorySubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -117,7 +136,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     setError(null);
 
     if (!categoryName.trim()) {
-      setError("分类名称不能为空");
+      setError('分类名称不能为空');
       return;
     }
 
@@ -128,22 +147,22 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     };
 
     const isEditing = editingCategoryId !== null;
-    const response = await fetch("/api/categories", {
-      method: isEditing ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/categories', {
+      method: isEditing ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         isEditing
           ? {
               ...payload,
               id: editingCategoryId,
             }
-          : payload,
+          : payload
       ),
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "操作失败");
+      setError(body.error ?? '操作失败');
       return;
     }
 
@@ -153,19 +172,19 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
 
   const handleCategoryDelete = async (id: number) => {
     setError(null);
-    if (!window.confirm("确认删除该分类？分类内的照片将一并删除。")) {
+    if (!window.confirm('确认删除该分类？分类内的照片将一并删除。')) {
       return;
     }
 
-    const response = await fetch("/api/categories", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/categories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "删除失败");
+      setError(body.error ?? '删除失败');
       return;
     }
 
@@ -175,15 +194,15 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
   const handleUserRoleChange = async (id: number, role: string) => {
     setError(null);
 
-    const response = await fetch("/api/users", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, role }),
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "角色更新失败");
+      setError(body.error ?? '角色更新失败');
       return;
     }
 
@@ -194,20 +213,25 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     setUsersLoading(true);
     setUsersError(null);
     try {
-      const params = new URLSearchParams({ page: String(userPage), pageSize: String(userPageSize) });
-      if (userQuery.trim()) params.set("q", userQuery.trim());
-      if (filterRole) params.set("role", filterRole);
-      params.set("status", "active");
+      const params = new URLSearchParams({
+        page: String(userPage),
+        pageSize: String(userPageSize),
+      });
+      if (userQuery.trim()) params.set('q', userQuery.trim());
+      if (filterRole) params.set('role', filterRole);
+      params.set('status', 'active');
       const res = await fetch(`/api/users?${params.toString()}`);
       const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body.error ?? "加载失败");
+      if (!res.ok) throw new Error(body.error ?? '加载失败');
       const list: UserItem[] = (body.data ?? []).filter((u: unknown): u is UserItem => {
-        return !!u && typeof (u as UserItem).status === "string" && (u as UserItem).status === "active";
+        return (
+          !!u && typeof (u as UserItem).status === 'string' && (u as UserItem).status === 'active'
+        );
       });
       setActiveUsers(list);
       setUserTotal(body.meta?.total ?? list.length);
     } catch (e) {
-      setUsersError(e instanceof Error ? e.message : "加载失败");
+      setUsersError(e instanceof Error ? e.message : '加载失败');
     } finally {
       setUsersLoading(false);
     }
@@ -218,18 +242,18 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userPage, userPageSize]);
 
-  const handleUserStatusChange = async (id: number, status: "pending" | "active" | "rejected") => {
+  const handleUserStatusChange = async (id: number, status: 'pending' | 'active' | 'rejected') => {
     setError(null);
 
-    const response = await fetch("/api/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/users', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status }),
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "状态更新失败");
+      setError(body.error ?? '状态更新失败');
       return;
     }
 
@@ -241,23 +265,23 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     setError(null);
 
     if (!newPassword || !confirmNewPassword) {
-      setError("请输入新密码");
+      setError('请输入新密码');
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      setError("两次输入的密码不一致");
+      setError('两次输入的密码不一致');
       return;
     }
 
     if (newPassword.length < 6) {
-      setError("密码至少 6 位");
+      setError('密码至少 6 位');
       return;
     }
 
-    const response = await fetch("/api/users/password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/users/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: resettingPasswordUserId,
         newPassword: newPassword,
@@ -266,25 +290,25 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "密码重置失败");
+      setError(body.error ?? '密码重置失败');
       return;
     }
 
     setResettingPasswordUserId(null);
-    setNewPassword("");
-    setConfirmNewPassword("");
-    alert("密码重置成功");
+    setNewPassword('');
+    setConfirmNewPassword('');
+    alert('密码重置成功');
   };
 
   const handleUserDelete = async () => {
     if (!deletingUserId) return;
     setError(null);
 
-    const user = users.find((u) => u.id === deletingUserId);
+    const user = users.find(u => u.id === deletingUserId);
     if (!user) return;
 
     if (user.photoCount > 0 && !deletePhotosDirectly && !deleteTransferUserId) {
-      setError("该用户有照片，请选择转移到其他用户或直接删除照片");
+      setError('该用户有照片，请选择转移到其他用户或直接删除照片');
       return;
     }
 
@@ -298,15 +322,15 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
       payload.transferToUserId = deleteTransferUserId;
     }
 
-    const response = await fetch("/api/users", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/users', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "删除用户失败");
+      setError(body.error ?? '删除用户失败');
       return;
     }
 
@@ -322,13 +346,13 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     setError(null);
 
     if (!shareCategoryId) {
-      setError("请选择分类");
+      setError('请选择分类');
       return;
     }
 
-    const response = await fetch("/api/share", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         categoryId: shareCategoryId,
         password: sharePassword.trim() || undefined,
@@ -339,13 +363,13 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     const body = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      setError(body.error ?? "分享链接创建失败");
+      setError(body.error ?? '分享链接创建失败');
       return;
     }
 
     setShareMessage(`${shareBaseUrl}${body.token}`);
-    setSharePassword("");
-    setExpireHours("24");
+    setSharePassword('');
+    setExpireHours('24');
     startTransition(() => router.refresh());
   };
 
@@ -355,28 +379,28 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     setError(null);
     try {
       await navigator.clipboard.writeText(fullUrl);
-      setCopySuccessMessage("链接已复制到剪贴板");
+      setCopySuccessMessage('链接已复制到剪贴板');
       setTimeout(() => setCopySuccessMessage(null), 3000);
     } catch {
-      setError("复制失败，请手动复制链接");
+      setError('复制失败，请手动复制链接');
     }
   };
 
   const handleDeleteShareLink = async (id: number) => {
     setError(null);
-    if (!window.confirm("确认删除该分享链接？")) {
+    if (!window.confirm('确认删除该分享链接？')) {
       return;
     }
 
-    const response = await fetch("/api/share", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/share', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      setError(body.error ?? "删除分享链接失败");
+      setError(body.error ?? '删除分享链接失败');
       return;
     }
 
@@ -387,10 +411,10 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
     <div className="space-y-4">
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <LayoutDashboard className="h-6 w-6 text-primary" />
+          <LayoutDashboard className="text-primary h-6 w-6" />
           <h1 className="text-2xl font-semibold tracking-tight">控制台</h1>
         </div>
-        <p className="text-sm text-muted-foreground">管理分类、成员以及分享链接。</p>
+        <p className="text-muted-foreground text-sm">管理分类、成员以及分享链接。</p>
       </div>
 
       {error && (
@@ -409,13 +433,16 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
         </TabsList>
 
         <TabsContent value="categories" className="space-y-6">
-          <form onSubmit={handleCategorySubmit} className="grid gap-4 rounded-lg border bg-card p-4 sm:grid-cols-2">
+          <form
+            onSubmit={handleCategorySubmit}
+            className="bg-card grid gap-4 rounded-lg border p-4 sm:grid-cols-2"
+          >
             <div className="space-y-2">
               <Label htmlFor="category-name">分类名称</Label>
               <Input
                 id="category-name"
                 value={categoryName}
-                onChange={(event) => setCategoryName(event.target.value)}
+                onChange={event => setCategoryName(event.target.value)}
                 placeholder="例如：活动照片"
                 required
               />
@@ -425,14 +452,17 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
               <Textarea
                 id="category-description"
                 value={categoryDescription}
-                onChange={(event) => setCategoryDescription(event.target.value)}
+                onChange={event => setCategoryDescription(event.target.value)}
                 placeholder="可选，用于说明该分类"
                 rows={3}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="category-visibility">可见范围</Label>
-              <Select value={categoryVisibility} onValueChange={(value) => setCategoryVisibility(value as CategoryVisibility)}>
+              <Select
+                value={categoryVisibility}
+                onValueChange={value => setCategoryVisibility(value as CategoryVisibility)}
+              >
                 <SelectTrigger id="category-visibility">
                   <SelectValue placeholder="选择可见范围" />
                 </SelectTrigger>
@@ -445,7 +475,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
             </div>
             <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row">
               <Button type="submit" disabled={isPending}>
-                {editingCategoryId ? "保存修改" : "添加分类"}
+                {editingCategoryId ? '保存修改' : '添加分类'}
               </Button>
               {editingCategoryId && (
                 <Button type="button" variant="ghost" onClick={resetCategoryForm}>
@@ -467,11 +497,11 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((category) => (
+                {categories.map(category => (
                   <TableRow key={category.id}>
                     <TableCell className="font-medium">{category.name}</TableCell>
                     <TableCell className="text-muted-foreground">
-                      {category.description || "—"}
+                      {category.description || '—'}
                     </TableCell>
                     <TableCell>
                       <VisibilityBadge visibility={category.visibility} />
@@ -484,13 +514,17 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                         onClick={() => {
                           setEditingCategoryId(category.id);
                           setCategoryName(category.name);
-                          setCategoryDescription(category.description ?? "");
+                          setCategoryDescription(category.description ?? '');
                           setCategoryVisibility(category.visibility);
                         }}
                       >
                         编辑
                       </Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleCategoryDelete(category.id)}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleCategoryDelete(category.id)}
+                      >
                         删除
                       </Button>
                     </TableCell>
@@ -519,7 +553,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pendingUsers.map((user) => (
+                    {pendingUsers.map(user => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.username}</TableCell>
                         <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
@@ -527,14 +561,14 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => handleUserStatusChange(user.id, "active")}
+                            onClick={() => handleUserStatusChange(user.id, 'active')}
                           >
                             通过
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleUserStatusChange(user.id, "rejected")}
+                            onClick={() => handleUserStatusChange(user.id, 'rejected')}
                           >
                             拒绝
                           </Button>
@@ -549,40 +583,54 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
 
           <div className="space-y-2">
             <h3 className="text-lg font-medium">已激活成员</h3>
-            <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 md:flex-row md:items-center md:justify-between">
+            <div className="bg-card flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-2">
                 <Input
                   placeholder="搜索用户名"
                   value={userQuery}
-                  onChange={(e) => setUserQuery(e.target.value)}
+                  onChange={e => setUserQuery(e.target.value)}
                   className="w-64"
                 />
                 <Select
-                  value={filterRole || "__all__"}
-                  onValueChange={(v) => setFilterRole(v === "__all__" ? "" : v)}
+                  value={filterRole || '__all__'}
+                  onValueChange={v => setFilterRole(v === '__all__' ? '' : v)}
                 >
-                  <SelectTrigger className="h-8 w-[140px]"><SelectValue placeholder="角色筛选" /></SelectTrigger>
+                  <SelectTrigger className="h-8 w-[140px]">
+                    <SelectValue placeholder="角色筛选" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all__">全部角色</SelectItem>
                     <SelectItem value="admin">管理员</SelectItem>
                     <SelectItem value="member">成员</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" onClick={() => { setUserPage(1); fetchUsers(); }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setUserPage(1);
+                    fetchUsers();
+                  }}
+                >
                   搜索
                 </Button>
               </div>
               <div className="flex items-center gap-2">
-                <label className="text-sm text-muted-foreground">每页</label>
-                <Select value={String(userPageSize)} onValueChange={(v) => setUserPageSize(Number(v))}>
-                  <SelectTrigger className="h-8 w-[100px]"><SelectValue /></SelectTrigger>
+                <label className="text-muted-foreground text-sm">每页</label>
+                <Select
+                  value={String(userPageSize)}
+                  onValueChange={v => setUserPageSize(Number(v))}
+                >
+                  <SelectTrigger className="h-8 w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="10">10</SelectItem>
                     <SelectItem value="20">20</SelectItem>
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="text-sm text-muted-foreground">共 {userTotal} 条</div>
+                <div className="text-muted-foreground text-sm">共 {userTotal} 条</div>
               </div>
             </div>
             <div className="overflow-hidden rounded-lg border">
@@ -597,11 +645,13 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activeUsers.map((user) => (
+                  {activeUsers.map(user => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.username}</TableCell>
                       <TableCell>
-                        <Badge variant={user.role === "admin" ? "default" : "secondary"}>{user.role}</Badge>
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                          {user.role}
+                        </Badge>
                       </TableCell>
                       <TableCell>{user.photoCount}</TableCell>
                       <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
@@ -609,8 +659,8 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                         <div className="flex items-center gap-2 px-4 py-3">
                           <Select
                             value={selectedUserRole[user.id] ?? user.role}
-                            onValueChange={(value) =>
-                              setSelectedUserRole((prev) => ({
+                            onValueChange={value =>
+                              setSelectedUserRole(prev => ({
                                 ...prev,
                                 [user.id]: value,
                               }))
@@ -628,7 +678,9 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                             variant="outline"
                             size="sm"
                             className="h-8"
-                            onClick={() => handleUserRoleChange(user.id, selectedUserRole[user.id] ?? user.role)}
+                            onClick={() =>
+                              handleUserRoleChange(user.id, selectedUserRole[user.id] ?? user.role)
+                            }
                           >
                             保存
                           </Button>
@@ -656,10 +708,26 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
               </Table>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <div className="text-sm text-muted-foreground">第 {userPage} 页 / 共 {Math.max(1, Math.ceil(userTotal / userPageSize))} 页</div>
+              <div className="text-muted-foreground text-sm">
+                第 {userPage} 页 / 共 {Math.max(1, Math.ceil(userTotal / userPageSize))} 页
+              </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled={userPage <= 1} onClick={() => setUserPage((p) => Math.max(p - 1, 1))}>上一页</Button>
-                <Button variant="ghost" size="sm" disabled={userPage * userPageSize >= userTotal} onClick={() => setUserPage((p) => p + 1)}>下一页</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={userPage <= 1}
+                  onClick={() => setUserPage(p => Math.max(p - 1, 1))}
+                >
+                  上一页
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={userPage * userPageSize >= userTotal}
+                  onClick={() => setUserPage(p => p + 1)}
+                >
+                  下一页
+                </Button>
               </div>
             </div>
             {usersLoading && (
@@ -678,15 +746,18 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
         </TabsContent>
 
         <TabsContent value="share" className="space-y-6">
-          <form onSubmit={handleShareCreate} className="grid gap-4 rounded-lg border bg-card p-4 md:grid-cols-2">
+          <form
+            onSubmit={handleShareCreate}
+            className="bg-card grid gap-4 rounded-lg border p-4 md:grid-cols-2"
+          >
             <div className="space-y-2">
               <Label htmlFor="share-category">选择分类</Label>
-              <Select onValueChange={(value) => setShareCategoryId(Number(value))}>
+              <Select onValueChange={value => setShareCategoryId(Number(value))}>
                 <SelectTrigger id="share-category">
                   <SelectValue placeholder="选择需要分享的分类" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {categories.map(category => (
                     <SelectItem key={category.id} value={String(category.id)}>
                       {category.name}
                     </SelectItem>
@@ -699,7 +770,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
               <Input
                 id="share-password"
                 value={sharePassword}
-                onChange={(event) => setSharePassword(event.target.value)}
+                onChange={event => setSharePassword(event.target.value)}
                 placeholder="留空则不设置密码"
               />
             </div>
@@ -711,7 +782,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                 min={1}
                 max={720}
                 value={expireHours}
-                onChange={(event) => setExpireHours(event.target.value)}
+                onChange={event => setExpireHours(event.target.value)}
               />
             </div>
             <div className="flex items-end">
@@ -746,15 +817,15 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {shareLinks.map((link) => (
+                {shareLinks.map(link => (
                   <TableRow key={link.id}>
                     <TableCell>{link.categoryName}</TableCell>
-                    <TableCell className="break-all text-sm text-primary">
+                    <TableCell className="text-primary text-sm break-all">
                       {shareBaseUrl}
                       {link.token}
                     </TableCell>
                     <TableCell>
-                      {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : "不限"}
+                      {link.expiresAt ? new Date(link.expiresAt).toLocaleString() : '不限'}
                     </TableCell>
                     <TableCell className="flex flex-wrap items-center gap-2">
                       <Button
@@ -782,21 +853,24 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
         </TabsContent>
       </Tabs>
 
-      <Dialog open={deletingUserId !== null} onOpenChange={(open) => !open && setDeletingUserId(null)}>
+      <Dialog
+        open={deletingUserId !== null}
+        onOpenChange={open => !open && setDeletingUserId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>删除用户</DialogTitle>
             <DialogDescription>
-              {deletingUserId && users.find((u) => u.id === deletingUserId)?.photoCount
-                ? `该用户有 ${users.find((u) => u.id === deletingUserId)?.photoCount} 张照片，请选择如何处理这些照片：`
-                : "确认删除该用户？"}
+              {deletingUserId && users.find(u => u.id === deletingUserId)?.photoCount
+                ? `该用户有 ${users.find(u => u.id === deletingUserId)?.photoCount} 张照片，请选择如何处理这些照片：`
+                : '确认删除该用户？'}
             </DialogDescription>
           </DialogHeader>
-          {deletingUserId && users.find((u) => u.id === deletingUserId)?.photoCount ? (
+          {deletingUserId && users.find(u => u.id === deletingUserId)?.photoCount ? (
             <RadioGroup
-              value={deletePhotosDirectly ? "delete" : deleteTransferUserId ? "transfer" : ""}
-              onValueChange={(value) => {
-                if (value === "delete") {
+              value={deletePhotosDirectly ? 'delete' : deleteTransferUserId ? 'transfer' : ''}
+              onValueChange={value => {
+                if (value === 'delete') {
                   setDeletePhotosDirectly(true);
                   setDeleteTransferUserId(null);
                 } else {
@@ -814,20 +888,22 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
               </div>
             </RadioGroup>
           ) : null}
-          {deletingUserId && !deletePhotosDirectly && users.find((u) => u.id === deletingUserId)?.photoCount ? (
+          {deletingUserId &&
+          !deletePhotosDirectly &&
+          users.find(u => u.id === deletingUserId)?.photoCount ? (
             <div className="space-y-2">
               <Label htmlFor="transfer-user">选择目标用户</Label>
               <Select
-                value={deleteTransferUserId?.toString() ?? ""}
-                onValueChange={(value) => setDeleteTransferUserId(Number(value))}
+                value={deleteTransferUserId?.toString() ?? ''}
+                onValueChange={value => setDeleteTransferUserId(Number(value))}
               >
                 <SelectTrigger id="transfer-user">
                   <SelectValue placeholder="选择用户" />
                 </SelectTrigger>
                 <SelectContent>
                   {activeUsers
-                    .filter((u) => u.id !== deletingUserId)
-                    .map((user) => (
+                    .filter(u => u.id !== deletingUserId)
+                    .map(user => (
                       <SelectItem key={user.id} value={String(user.id)}>
                         {user.username}
                       </SelectItem>
@@ -856,11 +932,11 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
 
       <Dialog
         open={resettingPasswordUserId !== null}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           if (!open) {
             setResettingPasswordUserId(null);
-            setNewPassword("");
-            setConfirmNewPassword("");
+            setNewPassword('');
+            setConfirmNewPassword('');
           }
         }}
       >
@@ -868,7 +944,8 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
           <DialogHeader>
             <DialogTitle>重置密码</DialogTitle>
             <DialogDescription>
-              为用户 <strong>{users.find((u) => u.id === resettingPasswordUserId)?.username}</strong> 设置新密码
+              为用户 <strong>{users.find(u => u.id === resettingPasswordUserId)?.username}</strong>{' '}
+              设置新密码
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -878,7 +955,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                 id="new-password"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={e => setNewPassword(e.target.value)}
                 placeholder="至少 6 位"
                 required
               />
@@ -889,7 +966,7 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
                 id="confirm-new-password"
                 type="password"
                 value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                onChange={e => setConfirmNewPassword(e.target.value)}
                 placeholder="再次输入新密码"
                 required
               />
@@ -900,8 +977,8 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
               variant="ghost"
               onClick={() => {
                 setResettingPasswordUserId(null);
-                setNewPassword("");
-                setConfirmNewPassword("");
+                setNewPassword('');
+                setConfirmNewPassword('');
               }}
             >
               取消
@@ -917,10 +994,13 @@ export function AdminDashboard({ categories, users, shareLinks, fileSets }: Admi
 }
 
 function VisibilityBadge({ visibility }: { visibility: CategoryVisibility }) {
-  const config: Record<CategoryVisibility, { label: string; variant: "destructive" | "outline" | "secondary" }> = {
-    private: { label: "私有", variant: "destructive" },
-    internal: { label: "共有", variant: "secondary" },
-    public: { label: "公开", variant: "outline" },
+  const config: Record<
+    CategoryVisibility,
+    { label: string; variant: 'destructive' | 'outline' | 'secondary' }
+  > = {
+    private: { label: '私有', variant: 'destructive' },
+    internal: { label: '共有', variant: 'secondary' },
+    public: { label: '公开', variant: 'outline' },
   };
   const { label, variant } = config[visibility];
   return <Badge variant={variant}>{label}</Badge>;

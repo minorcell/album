@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-guards";
-import { prisma } from "@/lib/db";
-import { persistFile, deleteFileAsset, getPublicFileUrl } from "@/lib/storage";
+import { requireAuth } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
+import { deleteFileAsset, getPublicFileUrl, persistFile } from '@/lib/storage';
+import { NextResponse } from 'next/server';
 
 type FileItem = {
   id: number;
@@ -24,14 +24,14 @@ export async function GET(req: Request) {
     if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
-    const isAdmin = session.user.role === "admin";
+    const isAdmin = session.user.role === 'admin';
 
     const url = new URL(req.url);
-    const filesetId = url.searchParams.get("filesetId");
-    const q = url.searchParams.get("q");
+    const filesetId = url.searchParams.get('filesetId');
+    const q = url.searchParams.get('q');
 
     if (!filesetId) {
-      return NextResponse.json({ message: "缺少 filesetId" }, { status: 400 });
+      return NextResponse.json({ message: '缺少 filesetId' }, { status: 400 });
     }
 
     // Check fileset access permission
@@ -41,17 +41,17 @@ export async function GET(req: Request) {
     });
 
     if (!fileset) {
-      return NextResponse.json({ message: "文件集不存在" }, { status: 404 });
+      return NextResponse.json({ message: '文件集不存在' }, { status: 404 });
     }
 
     const canView =
       isAdmin ||
-      fileset.visibility === "public" ||
-      fileset.visibility === "internal" ||
+      fileset.visibility === 'public' ||
+      fileset.visibility === 'internal' ||
       fileset.createdBy === userId;
 
     if (!canView) {
-      return NextResponse.json({ message: "无权限" }, { status: 403 });
+      return NextResponse.json({ message: '无权限' }, { status: 403 });
     }
 
     const where: any = { filesetId: Number(filesetId) };
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
 
     const items = (await prisma.file.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         filename: true,
@@ -75,17 +75,17 @@ export async function GET(req: Request) {
     })) as FileItem[];
 
     return NextResponse.json({
-      items: items.map((item) => ({
+      items: items.map(item => ({
         ...item,
         url: getPublicFileUrl(item.filename),
       })),
     });
   } catch (e: any) {
-    console.error("[GET /api/files]", e);
-    if (e?.message === "Unauthorized") {
-      return NextResponse.json({ message: "未登录" }, { status: 401 });
+    console.error('[GET /api/files]', e);
+    if (e?.message === 'Unauthorized') {
+      return NextResponse.json({ message: '未登录' }, { status: 401 });
     }
-    return NextResponse.json({ items: [], message: "文件列表暂不可用" }, { status: 500 });
+    return NextResponse.json({ items: [], message: '文件列表暂不可用' }, { status: 500 });
   }
 }
 
@@ -99,15 +99,15 @@ export async function POST(req: Request) {
     if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
-    const isAdmin = session.user.role === "admin";
+    const isAdmin = session.user.role === 'admin';
 
     const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const filesetIdStr = formData.get("filesetId") as string | null;
-    const description = (formData.get("description") as string | null) || undefined;
+    const file = formData.get('file') as File | null;
+    const filesetIdStr = formData.get('filesetId') as string | null;
+    const description = (formData.get('description') as string | null) || undefined;
 
     if (!file || !filesetIdStr) {
-      return NextResponse.json({ message: "缺少文件或文件集ID" }, { status: 400 });
+      return NextResponse.json({ message: '缺少文件或文件集ID' }, { status: 400 });
     }
 
     const filesetId = Number(filesetIdStr);
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     });
 
     if (!fileset) {
-      return NextResponse.json({ message: "文件集不存在" }, { status: 404 });
+      return NextResponse.json({ message: '文件集不存在' }, { status: 404 });
     }
 
     // Only admin or members can upload to private fileset
@@ -127,11 +127,11 @@ export async function POST(req: Request) {
     const canUpload =
       isAdmin ||
       fileset.createdBy === userId ||
-      fileset.visibility === "internal" ||
-      fileset.visibility === "public";
+      fileset.visibility === 'internal' ||
+      fileset.visibility === 'public';
 
     if (!canUpload) {
-      return NextResponse.json({ message: "无权限上传" }, { status: 403 });
+      return NextResponse.json({ message: '无权限上传' }, { status: 403 });
     }
 
     // Upload file to storage
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
         filename,
         originalName,
         description,
-        mimeType: file.type || "application/octet-stream",
+        mimeType: file.type || 'application/octet-stream',
         size: file.size,
         filesetId,
         uploaderId: userId,
@@ -159,20 +159,23 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({
-      item: {
-        ...created,
-        url: getPublicFileUrl(created.filename),
+    return NextResponse.json(
+      {
+        item: {
+          ...created,
+          url: getPublicFileUrl(created.filename),
+        },
       },
-    }, { status: 201 });
+      { status: 201 }
+    );
   } catch (e: any) {
-    console.error("[POST /api/files]", e);
-    if (e?.message === "Unauthorized") {
-      return NextResponse.json({ message: "未登录" }, { status: 401 });
+    console.error('[POST /api/files]', e);
+    if (e?.message === 'Unauthorized') {
+      return NextResponse.json({ message: '未登录' }, { status: 401 });
     }
-    if (e?.name === "UploadError") {
+    if (e?.name === 'UploadError') {
       return NextResponse.json({ message: e.message }, { status: e.statusCode || 400 });
     }
-    return NextResponse.json({ message: "上传失败" }, { status: 500 });
+    return NextResponse.json({ message: '上传失败' }, { status: 500 });
   }
 }

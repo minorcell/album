@@ -1,14 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FormsProvider } from "@/components/profile/forms-context";
-import { LoginForm } from "@/components/login-form";
-import { RegisterForm } from "@/components/register-form";
+import { LoginForm } from '@/components/login-form';
+import { FormsProvider } from '@/components/profile/forms-context';
+import { RegisterForm } from '@/components/register-form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
 
 export function LoginTabs() {
-  const [value, setValue] = useState("login");
+  const [value, setValue] = useState('login');
 
   return (
     <FormsProvider value={{ switchTab: setValue }}>
@@ -18,7 +17,7 @@ export function LoginTabs() {
           <TabsTrigger value="register">注册</TabsTrigger>
         </TabsList>
         <TabsContent value="login">
-          <LoginForm onSuccess={() => setValue("login")} />
+          <LoginForm onSuccess={() => setValue('login')} />
         </TabsContent>
         <TabsContent value="register">
           <RegisterForm />

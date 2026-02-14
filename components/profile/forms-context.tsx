@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { createContext, useContext } from "react";
+import { createContext, useContext } from 'react';
 
 interface FormsContextValue {
   switchTab?: (value: string) => void;
@@ -21,4 +21,3 @@ export function FormsProvider({
 export function useFormsContext() {
   return useContext(FormsContext);
 }
-

@@ -1,10 +1,9 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-
-import { prisma } from "@/lib/db";
+import { prisma } from '@/lib/db';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const checkSchema = z.object({
-  username: z.string().min(1, "用户名不能为空"),
+  username: z.string().min(1, '用户名不能为空'),
 });
 
 export async function POST(request: Request) {
@@ -12,7 +11,7 @@ export async function POST(request: Request) {
   const parsed = checkSchema.safeParse(body);
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;
-    const errorMessage = Object.values(errors).flat()[0] || "请求参数错误";
+    const errorMessage = Object.values(errors).flat()[0] || '请求参数错误';
     return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
@@ -21,6 +20,5 @@ export async function POST(request: Request) {
     select: { status: true },
   });
 
-  return NextResponse.json({ status: user?.status ?? "unknown" });
+  return NextResponse.json({ status: user?.status ?? 'unknown' });
 }
-

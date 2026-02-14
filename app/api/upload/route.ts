@@ -1,16 +1,15 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-
-import { requireAuth } from "@/lib/auth-guards";
-import { prisma } from "@/lib/db";
+import { requireAuth } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
 import {
   ConfigurationError,
+  UploadError,
   getPublicObjectUrl,
   getPublicThumbnailUrl,
-  persistVideo,
   persistImage,
-  UploadError,
-} from "@/lib/storage";
+  persistVideo,
+} from '@/lib/storage';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const uploadSchema = z.object({
   categoryId: z.coerce.number().int().positive(),
@@ -19,20 +18,20 @@ const uploadSchema = z.object({
 
 export async function POST(request: Request) {
   const authCheck = await requireAuth();
-  if ("error" in authCheck) {
+  if ('error' in authCheck) {
     return authCheck.error;
   }
 
   const formData = await request.formData();
-  const file = formData.get("file");
+  const file = formData.get('file');
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "缺少上传文件" }, { status: 400 });
+    return NextResponse.json({ error: '缺少上传文件' }, { status: 400 });
   }
 
   const parsed = uploadSchema.safeParse({
-    categoryId: formData.get("categoryId"),
-    description: formData.get("description") || undefined,
+    categoryId: formData.get('categoryId'),
+    description: formData.get('description') || undefined,
   });
 
   if (!parsed.success) {
@@ -44,23 +43,25 @@ export async function POST(request: Request) {
     select: { id: true, visibility: true },
   });
   if (!category) {
-    return NextResponse.json({ error: "分类不存在" }, { status: 404 });
+    return NextResponse.json({ error: '分类不存在' }, { status: 404 });
   }
 
-  const isAdmin = authCheck.session.user?.role === "admin";
-  if (category.visibility === "private" && !isAdmin) {
-    return NextResponse.json({ error: "无权在该分类上传" }, { status: 403 });
+  const isAdmin = authCheck.session.user?.role === 'admin';
+  if (category.visibility === 'private' && !isAdmin) {
+    return NextResponse.json({ error: '无权在该分类上传' }, { status: 403 });
   }
 
   const uploaderId = Number.parseInt(authCheck.session.user!.id, 10);
   if (Number.isNaN(uploaderId)) {
-    return NextResponse.json({ error: "用户信息异常" }, { status: 400 });
+    return NextResponse.json({ error: '用户信息异常' }, { status: 400 });
   }
 
   try {
-    const isImage = file.type.startsWith("image/");
-    const mimeType = file.type || (isImage ? "image/jpeg" : "video/mp4");
-    const { filename, originalName } = isImage ? await persistImage(file) : await persistVideo(file);
+    const isImage = file.type.startsWith('image/');
+    const mimeType = file.type || (isImage ? 'image/jpeg' : 'video/mp4');
+    const { filename, originalName } = isImage
+      ? await persistImage(file)
+      : await persistVideo(file);
 
     const photo = await prisma.photo.create({
       data: {
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
         description: parsed.data.description,
         categoryId: parsed.data.categoryId,
         uploaderId,
-        mediaType: isImage ? "image" : "video",
+        mediaType: isImage ? 'image' : 'video',
         mimeType,
       },
       include: {
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
       mediaType: photo.mediaType,
       mimeType: photo.mimeType,
       fileUrl: getPublicObjectUrl(photo.filename),
-      thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
+      thumbnailUrl: photo.mediaType === 'image' ? getPublicThumbnailUrl(photo.filename) : null,
     });
   } catch (error) {
     if (error instanceof UploadError) {
@@ -96,9 +97,9 @@ export async function POST(request: Request) {
     }
     if (error instanceof ConfigurationError) {
       console.error(error);
-      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+      return NextResponse.json({ error: '对象存储配置错误' }, { status: 500 });
     }
     console.error(error);
-    return NextResponse.json({ error: "上传失败" }, { status: 500 });
+    return NextResponse.json({ error: '上传失败' }, { status: 500 });
   }
 }

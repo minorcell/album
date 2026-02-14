@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import { Footer } from '@/components/footer';
+import { Navbar } from '@/components/navbar';
+import { Providers } from '@/components/providers';
+import { BRAND_FULL } from '@/lib/config';
+import type { Metadata } from 'next';
 
-import { Providers } from "@/components/providers";
-import { BRAND_FULL } from "@/lib/config";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
-
+import './globals.css';
 
 export const metadata: Metadata = {
   title: BRAND_FULL,
-  description: "内部相册平台 · 让创作与资料协同更高效",
+  description: '内部相册平台 · 让创作与资料协同更高效',
   icons: {
-    icon: "/favicon.ico",
+    icon: '/favicon.ico',
   },
 };
 
@@ -22,9 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body
-        className={`min-h-screen bg-background font-sans antialiased`}
-      >
+      <body className={`bg-background min-h-screen font-sans antialiased`}>
         <Providers>
           <div className="flex min-h-screen flex-col">
             <Navbar />

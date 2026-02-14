@@ -1,34 +1,33 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import bcrypt from "bcryptjs";
-
-import { requireAdmin } from "@/lib/auth-guards";
-import { prisma } from "@/lib/db";
-import type { Prisma } from "@prisma/client";
+import { requireAdmin } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
+import type { Prisma } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 type UserWithCount = {
   id: number;
   username: string;
-  role: "admin" | "member";
-  status: "pending" | "active" | "rejected";
+  role: 'admin' | 'member';
+  status: 'pending' | 'active' | 'rejected';
   createdAt: Date;
   _count: { photos: number };
 };
 
 const createUserSchema = z.object({
-  username: z.string().min(3, "用户名至少 3 位"),
-  password: z.string().min(6, "密码至少 6 位"),
-  role: z.enum(["admin", "member"]).optional(),
+  username: z.string().min(3, '用户名至少 3 位'),
+  password: z.string().min(6, '密码至少 6 位'),
+  role: z.enum(['admin', 'member']).optional(),
 });
 
 const updateRoleSchema = z.object({
   id: z.number().int(),
-  role: z.enum(["admin", "member"]),
+  role: z.enum(['admin', 'member']),
 });
 
 const updateStatusSchema = z.object({
   id: z.number().int(),
-  status: z.enum(["pending", "active", "rejected"]),
+  status: z.enum(['pending', 'active', 'rejected']),
 });
 
 const deleteUserSchema = z.object({
@@ -39,30 +38,32 @@ const deleteUserSchema = z.object({
 
 export async function GET(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const { searchParams } = new URL(request.url);
-  const pageParam = searchParams.get("page") ?? "1";
-  const pageSizeParam = searchParams.get("pageSize") ?? "20";
-  const q = (searchParams.get("q") ?? "").trim();
-  const roleParam = (searchParams.get("role") ?? "").trim();
-  const statusParam = (searchParams.get("status") ?? "").trim();
+  const pageParam = searchParams.get('page') ?? '1';
+  const pageSizeParam = searchParams.get('pageSize') ?? '20';
+  const q = (searchParams.get('q') ?? '').trim();
+  const roleParam = (searchParams.get('role') ?? '').trim();
+  const statusParam = (searchParams.get('status') ?? '').trim();
 
   const page = Math.max(Number.parseInt(pageParam, 10) || 1, 1);
   const pageSize = Math.min(Math.max(Number.parseInt(pageSizeParam, 10) || 20, 1), 100);
 
   const where: Prisma.UserWhereInput = {
     ...(q ? { username: { contains: q } } : {}),
-    ...(roleParam === "admin" || roleParam === "member" ? { role: roleParam as "admin" | "member" } : {}),
-    ...(statusParam === "pending" || statusParam === "active" || statusParam === "rejected"
-      ? { status: statusParam as "pending" | "active" | "rejected" }
+    ...(roleParam === 'admin' || roleParam === 'member'
+      ? { role: roleParam as 'admin' | 'member' }
+      : {}),
+    ...(statusParam === 'pending' || statusParam === 'active' || statusParam === 'rejected'
+      ? { status: statusParam as 'pending' | 'active' | 'rejected' }
       : {}),
   };
 
   const [users, total] = await Promise.all([
     prisma.user.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
       select: {
@@ -80,7 +81,7 @@ export async function GET(request: Request) {
   ]);
 
   return NextResponse.json({
-    data: users.map((user) => ({
+    data: users.map(user => ({
       id: user.id,
       username: user.username,
       role: user.role,
@@ -97,28 +98,28 @@ export async function POST(request: Request) {
   const parsed = createUserSchema.safeParse(body);
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;
-    const errorMessage = Object.values(errors).flat()[0] || "请求参数错误";
+    const errorMessage = Object.values(errors).flat()[0] || '请求参数错误';
     return NextResponse.json({ error: errorMessage }, { status: 400 });
   }
 
   const totalUsers = await prisma.user.count();
-  let role = parsed.data.role ?? "member";
-  let status: "pending" | "active" = "pending";
+  let role = parsed.data.role ?? 'member';
+  let status: 'pending' | 'active' = 'pending';
 
   if (totalUsers === 0) {
-    role = "admin";
-    status = "active";
-  } else if (parsed.data.role && parsed.data.role !== "member") {
+    role = 'admin';
+    status = 'active';
+  } else if (parsed.data.role && parsed.data.role !== 'member') {
     const adminCheck = await requireAdmin();
-    if ("error" in adminCheck) {
+    if ('error' in adminCheck) {
       return adminCheck.error;
     }
-    status = "active";
+    status = 'active';
   }
 
   const existing = await prisma.user.findUnique({ where: { username: parsed.data.username } });
   if (existing) {
-    return NextResponse.json({ error: "用户名已存在" }, { status: 409 });
+    return NextResponse.json({ error: '用户名已存在' }, { status: 409 });
   }
 
   const hashed = await bcrypt.hash(parsed.data.password, 10);
@@ -144,12 +145,12 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = updateRoleSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "请求参数错误" }, { status: 400 });
+    return NextResponse.json({ error: '请求参数错误' }, { status: 400 });
   }
 
   const user = await prisma.user.update({
@@ -168,12 +169,12 @@ export async function PUT(request: Request) {
 
 export async function PATCH(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = updateStatusSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "请求参数错误" }, { status: 400 });
+    return NextResponse.json({ error: '请求参数错误' }, { status: 400 });
   }
 
   const user = await prisma.user.update({
@@ -193,12 +194,12 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parsed = deleteUserSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "请求参数错误" }, { status: 400 });
+    return NextResponse.json({ error: '请求参数错误' }, { status: 400 });
   }
 
   const { id, transferToUserId, deletePhotos } = parsed.data;
@@ -210,7 +211,7 @@ export async function DELETE(request: Request) {
   });
 
   if (!userToDelete) {
-    return NextResponse.json({ error: "用户不存在" }, { status: 404 });
+    return NextResponse.json({ error: '用户不存在' }, { status: 404 });
   }
 
   // 如果有照片需要处理
@@ -227,7 +228,7 @@ export async function DELETE(request: Request) {
       });
 
       if (!targetUser) {
-        return NextResponse.json({ error: "目标用户不存在" }, { status: 404 });
+        return NextResponse.json({ error: '目标用户不存在' }, { status: 404 });
       }
 
       await prisma.photo.updateMany({
@@ -236,8 +237,8 @@ export async function DELETE(request: Request) {
       });
     } else {
       return NextResponse.json(
-        { error: "用户有照片，请选择转移到其他用户或直接删除" },
-        { status: 400 },
+        { error: '用户有照片，请选择转移到其他用户或直接删除' },
+        { status: 400 }
       );
     }
   }

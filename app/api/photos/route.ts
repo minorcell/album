@@ -1,11 +1,6 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import JSZip from "jszip";
-
-import type { Prisma, CategoryVisibility } from "@prisma/client";
-import { prisma } from "@/lib/db";
-import { requireAuth } from "@/lib/auth-guards";
-import { auth } from "@/lib/auth";
+import { auth } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
 import {
   ConfigurationError,
   deleteImageAssets,
@@ -14,7 +9,11 @@ import {
   getPublicObjectUrl,
   getPublicThumbnailUrl,
   isNotFoundError,
-} from "@/lib/storage";
+} from '@/lib/storage';
+import type { CategoryVisibility, Prisma } from '@prisma/client';
+import JSZip from 'jszip';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 type PhotoWithRelations = {
   id: number;
@@ -22,7 +21,7 @@ type PhotoWithRelations = {
   originalName: string;
   description: string | null;
   createdAt: Date;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
   mimeType: string;
   uploader: { username: string };
   category: { name: string };
@@ -32,7 +31,7 @@ type PhotoForDeletion = {
   id: number;
   filename: string;
   uploaderId: number;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
 };
 
 const idArraySchema = z.array(z.number().int().positive()).min(1);
@@ -50,24 +49,24 @@ const renameSchema = z.object({
   description: z
     .string()
     .max(300)
-    .transform((value) => value.trim())
+    .transform(value => value.trim())
     .optional(),
 });
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const categoryIdParam = searchParams.get("categoryId");
-  const pageParam = searchParams.get("page") ?? "1";
-  const pageSizeParam = searchParams.get("pageSize") ?? "24";
+  const categoryIdParam = searchParams.get('categoryId');
+  const pageParam = searchParams.get('page') ?? '1';
+  const pageSizeParam = searchParams.get('pageSize') ?? '24';
 
   const page = Math.max(Number.parseInt(pageParam, 10) || 1, 1);
   const pageSize = Math.min(Math.max(Number.parseInt(pageSizeParam, 10) || 24, 1), 96);
 
   const session = await auth();
-  const internalVisibilities: CategoryVisibility[] = ["internal", "public"];
+  const internalVisibilities: CategoryVisibility[] = ['internal', 'public'];
   const visibilityFilter: Prisma.PhotoWhereInput = !session?.user
-    ? { category: { visibility: "public" } }
-    : session.user.role === "admin"
+    ? { category: { visibility: 'public' } }
+    : session.user.role === 'admin'
       ? {}
       : { category: { visibility: { in: internalVisibilities } } };
 
@@ -79,7 +78,7 @@ export async function GET(request: Request) {
 
   const photos = (await prisma.photo.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
     skip: (page - 1) * pageSize,
     take: pageSize,
     include: {
@@ -96,7 +95,7 @@ export async function GET(request: Request) {
 
   try {
     return NextResponse.json({
-      data: photos.map((photo) => ({
+      data: photos.map(photo => ({
         id: photo.id,
         filename: photo.filename,
         originalName: photo.originalName,
@@ -107,7 +106,7 @@ export async function GET(request: Request) {
         mediaType: photo.mediaType,
         mimeType: photo.mimeType,
         fileUrl: getPublicObjectUrl(photo.filename),
-        thumbnailUrl: photo.mediaType === "image" ? getPublicThumbnailUrl(photo.filename) : null,
+        thumbnailUrl: photo.mediaType === 'image' ? getPublicThumbnailUrl(photo.filename) : null,
       })),
       meta: {
         page,
@@ -118,7 +117,7 @@ export async function GET(request: Request) {
   } catch (error) {
     if (error instanceof ConfigurationError) {
       console.error(error);
-      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+      return NextResponse.json({ error: '对象存储配置错误' }, { status: 500 });
     }
     throw error;
   }
@@ -144,7 +143,7 @@ export async function POST(request: Request) {
   });
 
   if (photos.length === 0) {
-    return NextResponse.json({ error: "媒体不存在" }, { status: 404 });
+    return NextResponse.json({ error: '媒体不存在' }, { status: 404 });
   }
 
   const zip = new JSZip();
@@ -167,24 +166,24 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ConfigurationError) {
       console.error(error);
-      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+      return NextResponse.json({ error: '对象存储配置错误' }, { status: 500 });
     }
     throw error;
   }
 
   if (addedCount === 0) {
-    return NextResponse.json({ error: "媒体文件不存在" }, { status: 404 });
+    return NextResponse.json({ error: '媒体文件不存在' }, { status: 404 });
   }
 
-  const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
+  const zipBuffer = await zip.generateAsync({ type: 'nodebuffer' });
   const zipArrayBuffer = new ArrayBuffer(zipBuffer.byteLength);
   const zipView = new Uint8Array(zipArrayBuffer);
   zipView.set(new Uint8Array(zipBuffer.buffer, zipBuffer.byteOffset, zipBuffer.byteLength));
 
   const response = new Response(zipArrayBuffer, {
     headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename=photos-${Date.now()}.zip`,
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename=photos-${Date.now()}.zip`,
     },
   });
 
@@ -212,29 +211,29 @@ export async function DELETE(request: Request) {
 
   const requesterId = Number.parseInt(authCheck.session.user!.id, 10);
   if (Number.isNaN(requesterId)) {
-    return NextResponse.json({ error: "用户信息异常" }, { status: 400 });
+    return NextResponse.json({ error: '用户信息异常' }, { status: 400 });
   }
 
-  const isAdmin = authCheck.session.user?.role === "admin";
-  const unauthorized = targetPhotos.filter((photo) => photo.uploaderId !== requesterId && !isAdmin);
+  const isAdmin = authCheck.session.user?.role === 'admin';
+  const unauthorized = targetPhotos.filter(photo => photo.uploaderId !== requesterId && !isAdmin);
   if (unauthorized.length > 0) {
-    return NextResponse.json({ error: "仅可操作自己上传的照片" }, { status: 403 });
+    return NextResponse.json({ error: '仅可操作自己上传的照片' }, { status: 403 });
   }
 
-  await prisma.photo.deleteMany({ where: { id: { in: targetPhotos.map((photo) => photo.id) } } });
+  await prisma.photo.deleteMany({ where: { id: { in: targetPhotos.map(photo => photo.id) } } });
 
   try {
     await Promise.all(
-      targetPhotos.map((photo) =>
-        photo.mediaType === "image"
+      targetPhotos.map(photo =>
+        photo.mediaType === 'image'
           ? deleteImageAssets(photo.filename)
-          : deleteUploadObject(photo.filename),
-      ),
+          : deleteUploadObject(photo.filename)
+      )
     );
   } catch (error) {
     if (error instanceof ConfigurationError) {
       console.error(error);
-      return NextResponse.json({ error: "对象存储配置错误" }, { status: 500 });
+      return NextResponse.json({ error: '对象存储配置错误' }, { status: 500 });
     }
     throw error;
   }
@@ -258,23 +257,26 @@ export async function PATCH(request: Request) {
   });
 
   if (!photo) {
-    return NextResponse.json({ error: "媒体不存在" }, { status: 404 });
+    return NextResponse.json({ error: '媒体不存在' }, { status: 404 });
   }
 
   const requesterId = Number.parseInt(authCheck.session.user!.id, 10);
   if (Number.isNaN(requesterId)) {
-    return NextResponse.json({ error: "用户信息异常" }, { status: 400 });
+    return NextResponse.json({ error: '用户信息异常' }, { status: 400 });
   }
 
-  const isAdmin = authCheck.session.user?.role === "admin";
+  const isAdmin = authCheck.session.user?.role === 'admin';
   if (!isAdmin && photo.uploaderId !== requesterId) {
-    return NextResponse.json({ error: "仅可操作自己上传的照片" }, { status: 403 });
+    return NextResponse.json({ error: '仅可操作自己上传的照片' }, { status: 403 });
   }
 
   const updated = await prisma.photo.update({
     where: { id: parsed.data.id },
     data: {
-      description: parsed.data.description && parsed.data.description.length > 0 ? parsed.data.description : null,
+      description:
+        parsed.data.description && parsed.data.description.length > 0
+          ? parsed.data.description
+          : null,
     },
     select: {
       id: true,

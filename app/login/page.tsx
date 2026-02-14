@@ -1,13 +1,12 @@
-import { redirect } from "next/navigation";
-
-import { auth } from "@/lib/auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoginTabs } from "@/components/profile/login-tabs";
+import { LoginTabs } from '@/components/profile/login-tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { auth } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
 export default async function LoginPage() {
   const session = await auth();
   if (session?.user) {
-    redirect("/");
+    redirect('/');
   }
 
   return (

@@ -1,8 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
+import * as React from 'react';
 
 type LoadingButtonProps = React.ComponentProps<typeof Button> & {
   loading?: boolean;
@@ -10,11 +9,11 @@ type LoadingButtonProps = React.ComponentProps<typeof Button> & {
 };
 
 export const LoadingButton = React.forwardRef<HTMLButtonElement, LoadingButtonProps>(
-  ({ children, loading = false, loadingText = "处理中...", disabled, ...props }, ref) => (
+  ({ children, loading = false, loadingText = '处理中...', disabled, ...props }, ref) => (
     <Button ref={ref} disabled={loading || disabled} {...props}>
       {loading ? loadingText : children}
     </Button>
-  ),
+  )
 );
 
-LoadingButton.displayName = "LoadingButton";
+LoadingButton.displayName = 'LoadingButton';

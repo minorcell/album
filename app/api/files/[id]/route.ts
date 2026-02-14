@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { requireAuth, requireAdmin } from "@/lib/auth-guards";
-import { prisma } from "@/lib/db";
-import { deleteFileAsset, getPublicFileUrl } from "@/lib/storage";
+import { requireAdmin, requireAuth } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
+import { deleteFileAsset, getPublicFileUrl } from '@/lib/storage';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const updateSchema = z.object({
   description: z.string().max(500).optional(),
@@ -15,13 +15,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   try {
     const { id: idStr } = await params;
     const id = Number(idStr);
-    if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
+    if (Number.isNaN(id)) return NextResponse.json({ message: 'ID 错误' }, { status: 400 });
 
     const authCheck = await requireAuth();
     if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
-    const isAdmin = session.user.role === "admin";
+    const isAdmin = session.user.role === 'admin';
 
     const file = await prisma.file.findUnique({
       where: { id },
@@ -42,16 +42,16 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       },
     });
 
-    if (!file) return NextResponse.json({ message: "未找到" }, { status: 404 });
+    if (!file) return NextResponse.json({ message: '未找到' }, { status: 404 });
 
     // Permission check
     const canView =
       isAdmin ||
-      file.fileSet.visibility === "public" ||
-      file.fileSet.visibility === "internal" ||
+      file.fileSet.visibility === 'public' ||
+      file.fileSet.visibility === 'internal' ||
       file.fileSet.createdBy === userId;
 
-    if (!canView) return NextResponse.json({ message: "无权限" }, { status: 403 });
+    if (!canView) return NextResponse.json({ message: '无权限' }, { status: 403 });
 
     return NextResponse.json({
       item: {
@@ -69,11 +69,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       },
     });
   } catch (e: any) {
-    console.error("[GET /api/files/:id]", e);
-    if (e?.message === "Unauthorized") {
-      return NextResponse.json({ message: "未登录" }, { status: 401 });
+    console.error('[GET /api/files/:id]', e);
+    if (e?.message === 'Unauthorized') {
+      return NextResponse.json({ message: '未登录' }, { status: 401 });
     }
-    return NextResponse.json({ message: "获取失败" }, { status: 500 });
+    return NextResponse.json({ message: '获取失败' }, { status: 500 });
   }
 }
 
@@ -84,30 +84,33 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const { id: idStr } = await params;
     const id = Number(idStr);
-    if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
+    if (Number.isNaN(id)) return NextResponse.json({ message: 'ID 错误' }, { status: 400 });
 
     const authCheck = await requireAuth();
     if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
-    const isAdmin = session.user.role === "admin";
+    const isAdmin = session.user.role === 'admin';
 
     const file = await prisma.file.findUnique({
       where: { id },
       select: { uploaderId: true },
     });
 
-    if (!file) return NextResponse.json({ message: "未找到" }, { status: 404 });
+    if (!file) return NextResponse.json({ message: '未找到' }, { status: 404 });
 
     // Only uploader or admin can update
     if (!isAdmin && file.uploaderId !== userId) {
-      return NextResponse.json({ message: "无权限" }, { status: 403 });
+      return NextResponse.json({ message: '无权限' }, { status: 403 });
     }
 
     const body = await req.json().catch(() => undefined);
     const parsed = updateSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ message: "参数错误", errors: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json(
+        { message: '参数错误', errors: parsed.error.flatten() },
+        { status: 400 }
+      );
     }
 
     const updated = await prisma.file.update({
@@ -130,11 +133,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       },
     });
   } catch (e: any) {
-    console.error("[PUT /api/files/:id]", e);
-    if (e?.message === "Unauthorized") {
-      return NextResponse.json({ message: "未登录" }, { status: 401 });
+    console.error('[PUT /api/files/:id]', e);
+    if (e?.message === 'Unauthorized') {
+      return NextResponse.json({ message: '未登录' }, { status: 401 });
     }
-    return NextResponse.json({ message: "更新失败" }, { status: 500 });
+    return NextResponse.json({ message: '更新失败' }, { status: 500 });
   }
 }
 
@@ -145,24 +148,24 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   try {
     const { id: idStr } = await params;
     const id = Number(idStr);
-    if (Number.isNaN(id)) return NextResponse.json({ message: "ID 错误" }, { status: 400 });
+    if (Number.isNaN(id)) return NextResponse.json({ message: 'ID 错误' }, { status: 400 });
 
     const authCheck = await requireAuth();
     if (!authCheck.ok) return authCheck.error;
     const session = authCheck.session;
     const userId = Number(session.user.id);
-    const isAdmin = session.user.role === "admin";
+    const isAdmin = session.user.role === 'admin';
 
     const file = await prisma.file.findUnique({
       where: { id },
       select: { filename: true, uploaderId: true },
     });
 
-    if (!file) return NextResponse.json({ message: "未找到" }, { status: 404 });
+    if (!file) return NextResponse.json({ message: '未找到' }, { status: 404 });
 
     // Only uploader or admin can delete
     if (!isAdmin && file.uploaderId !== userId) {
-      return NextResponse.json({ message: "无权限" }, { status: 403 });
+      return NextResponse.json({ message: '无权限' }, { status: 403 });
     }
 
     // Delete from storage
@@ -173,10 +176,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ ok: true });
   } catch (e: any) {
-    console.error("[DELETE /api/files/:id]", e);
-    if (e?.message === "Unauthorized") {
-      return NextResponse.json({ message: "未登录" }, { status: 401 });
+    console.error('[DELETE /api/files/:id]', e);
+    if (e?.message === 'Unauthorized') {
+      return NextResponse.json({ message: '未登录' }, { status: 401 });
     }
-    return NextResponse.json({ message: "删除失败" }, { status: 500 });
+    return NextResponse.json({ message: '删除失败' }, { status: 500 });
   }
 }

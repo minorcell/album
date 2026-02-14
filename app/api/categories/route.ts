@@ -1,17 +1,16 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
+import { auth } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth-guards';
+import { prisma } from '@/lib/db';
+import type { CategoryVisibility, Prisma } from '@prisma/client';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth-guards";
-import { auth } from "@/lib/auth";
-import type { Prisma, CategoryVisibility } from "@prisma/client";
-
-const visibilityEnum = z.enum(["private", "internal", "public"] satisfies CategoryVisibility[]);
+const visibilityEnum = z.enum(['private', 'internal', 'public'] satisfies CategoryVisibility[]);
 
 const categoryCreateSchema = z.object({
-  name: z.string().min(1, "分类名称不能为空"),
+  name: z.string().min(1, '分类名称不能为空'),
   description: z.string().optional(),
-  visibility: visibilityEnum.default("internal"),
+  visibility: visibilityEnum.default('internal'),
 });
 
 const categoryUpdateSchema = categoryCreateSchema.extend({
@@ -33,16 +32,16 @@ type CategoryWithCount = {
 
 export async function GET() {
   const session = await auth();
-  const internalVisibilities: CategoryVisibility[] = ["internal", "public"];
+  const internalVisibilities: CategoryVisibility[] = ['internal', 'public'];
   const where: Prisma.CategoryWhereInput = !session?.user
-    ? { visibility: "public" }
-    : session.user.role === "admin"
+    ? { visibility: 'public' }
+    : session.user.role === 'admin'
       ? {}
       : { visibility: { in: internalVisibilities } };
 
   const categories = (await prisma.category.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
     include: {
       _count: {
         select: { photos: true },
@@ -51,20 +50,20 @@ export async function GET() {
   })) as CategoryWithCount[];
 
   return NextResponse.json(
-    categories.map((category) => ({
+    categories.map(category => ({
       id: category.id,
       name: category.name,
       description: category.description,
       createdAt: category.createdAt,
       photoCount: category._count.photos,
       visibility: category.visibility,
-    })),
+    }))
   );
 }
 
 export async function POST(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parseResult = categoryCreateSchema.safeParse(body);
@@ -84,7 +83,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parseResult = categoryUpdateSchema.safeParse(body);
@@ -105,7 +104,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   const adminCheck = await requireAdmin();
-  if ("error" in adminCheck) return adminCheck.error;
+  if ('error' in adminCheck) return adminCheck.error;
 
   const body = await request.json().catch(() => null);
   const parseResult = categoryDeleteSchema.safeParse(body);

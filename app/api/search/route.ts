@@ -1,22 +1,19 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
   const session = await auth();
   const url = new URL(req.url);
-  const q = (url.searchParams.get("q") || "").trim();
-  const filesetIdParam = url.searchParams.get("filesetId");
-  const mime = url.searchParams.get("mime");
+  const q = (url.searchParams.get('q') || '').trim();
+  const filesetIdParam = url.searchParams.get('filesetId');
+  const mime = url.searchParams.get('mime');
 
   const where: Record<string, unknown> = {};
 
   // Text search on originalName or description
   if (q) {
-    where.OR = [
-      { originalName: { contains: q } },
-      { description: { contains: q } },
-    ];
+    where.OR = [{ originalName: { contains: q } }, { description: { contains: q } }];
   }
 
   // Filter by fileset
@@ -34,12 +31,12 @@ export async function GET(req: Request) {
 
   // Visibility for unauthenticated users: only public file sets
   if (!session?.user) {
-    where.fileSet = { visibility: "public" } as any;
+    where.fileSet = { visibility: 'public' } as any;
   }
 
   const items = await prisma.file.findMany({
     where,
-    orderBy: { updatedAt: "desc" },
+    orderBy: { updatedAt: 'desc' },
     select: {
       id: true,
       filename: true,

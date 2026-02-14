@@ -1,15 +1,20 @@
-"use client";
+'use client';
 
-import { FormEvent, useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 
 interface UploadFormProps {
   categories: Array<{ id: number; name: string }>;
@@ -22,7 +27,7 @@ interface UploadedPhoto {
   filename: string;
   description: string | null;
   thumbnailUrl: string | null;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
   fileUrl: string;
 }
 
@@ -30,9 +35,9 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [categoryId, setCategoryId] = useState<string | undefined>(
-    defaultCategoryId ? String(defaultCategoryId) : undefined,
+    defaultCategoryId ? String(defaultCategoryId) : undefined
   );
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [files, setFiles] = useState<FileList | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [status, setStatus] = useState<string | null>(null);
@@ -41,7 +46,7 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (defaultCategoryId && categories.some((category) => category.id === defaultCategoryId)) {
+    if (defaultCategoryId && categories.some(category => category.id === defaultCategoryId)) {
       setCategoryId(String(defaultCategoryId));
     }
   }, [defaultCategoryId, categories]);
@@ -58,10 +63,10 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
 
   const resetForm = () => {
     if (inputRef.current) {
-      inputRef.current.value = "";
+      inputRef.current.value = '';
     }
     setFiles(null);
-    setDescription("");
+    setDescription('');
     setProgress(0);
   };
 
@@ -71,12 +76,12 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
     setStatus(null);
 
     if (!files || files.length === 0) {
-      setError("请选择至少一个文件");
+      setError('请选择至少一个文件');
       return;
     }
 
     if (!categoryId) {
-      setError("请选择分类");
+      setError('请选择分类');
       return;
     }
 
@@ -91,36 +96,36 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
       if (!file) continue;
 
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("categoryId", categoryId);
+      formData.append('file', file);
+      formData.append('categoryId', categoryId);
       if (description.trim()) {
-        formData.append("description", description.trim());
+        formData.append('description', description.trim());
       }
 
       try {
-        const response = await fetch("/api/upload", {
-          method: "POST",
+        const response = await fetch('/api/upload', {
+          method: 'POST',
           body: formData,
         });
 
         if (!response.ok) {
-          const payload = await response.json().catch(() => ({ error: "上传失败" }));
-          throw new Error(payload.error ?? "上传失败");
+          const payload = await response.json().catch(() => ({ error: '上传失败' }));
+          throw new Error(payload.error ?? '上传失败');
         }
 
         const payload = (await response.json()) as UploadedPhoto;
         uploads.push(payload);
         setProgress(Math.round(((index + 1) / total) * 100));
       } catch (err) {
-        const message = err instanceof Error ? err.message : "上传失败";
+        const message = err instanceof Error ? err.message : '上传失败';
         setError(message);
         break;
       }
     }
 
     if (uploads.length === total) {
-      setStatus("上传成功");
-      setUploaded((prev) => [...uploads, ...prev]);
+      setStatus('上传成功');
+      setUploaded(prev => [...uploads, ...prev]);
       resetForm();
       router.refresh();
       onSuccess?.(uploads.length);
@@ -131,7 +136,7 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
 
   if (categories.length === 0) {
     return (
-      <div className="space-y-4 text-sm text-muted-foreground">
+      <div className="text-muted-foreground space-y-4 text-sm">
         <p>暂无可用分类，请联系管理员先创建分类后再上传。</p>
       </div>
     );
@@ -147,7 +152,7 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
               <SelectValue placeholder="选择分类" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category) => (
+              {categories.map(category => (
                 <SelectItem key={category.id} value={String(category.id)}>
                   {category.name}
                 </SelectItem>
@@ -160,7 +165,7 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
           <Textarea
             id="description"
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={event => setDescription(event.target.value)}
             placeholder="简单描述媒体信息"
             rows={4}
           />
@@ -170,7 +175,7 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
       <div className="space-y-2">
         <Label>上传媒体</Label>
         <div
-          className="flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/50 bg-muted/40 text-center"
+          className="border-muted-foreground/50 bg-muted/40 flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed text-center"
           onClick={() => inputRef.current?.click()}
         >
           <Input
@@ -183,13 +188,11 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
             onChange={handleSelectFiles}
           />
           <p className="text-sm font-medium">点击或拖拽文件到此处</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             支持 JPG / PNG / GIF / WebP（≤10MB）及 MP4 / WebM / MOV（≤512MB）。
           </p>
           {files && files.length > 0 && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              已选择 {files.length} 个文件
-            </p>
+            <p className="text-muted-foreground mt-2 text-sm">已选择 {files.length} 个文件</p>
           )}
         </div>
       </div>
@@ -197,19 +200,19 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
       {progress > 0 && (
         <div>
           <Label>上传进度</Label>
-          <div className="mt-2 h-2 w-full rounded-full bg-muted">
+          <div className="bg-muted mt-2 h-2 w-full rounded-full">
             <div
-              className="h-2 rounded-full bg-primary transition-all"
+              className="bg-primary h-2 rounded-full transition-all"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{progress}%</p>
+          <p className="text-muted-foreground mt-1 text-xs">{progress}%</p>
         </div>
       )}
 
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "正在上传..." : "开始上传"}
+          {isSubmitting ? '正在上传...' : '开始上传'}
         </Button>
         <Button type="button" variant="ghost" disabled={isSubmitting} onClick={resetForm}>
           重置
@@ -232,11 +235,11 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
 
       {uploaded.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">最近上传</h3>
+          <h3 className="text-muted-foreground text-sm font-medium">最近上传</h3>
           <div className="grid gap-3 sm:grid-cols-3">
-            {uploaded.map((photo) => (
+            {uploaded.map(photo => (
               <div key={photo.id} className="overflow-hidden rounded-lg border">
-                {photo.mediaType === "video" ? (
+                {photo.mediaType === 'video' ? (
                   <div className="relative h-32 w-full overflow-hidden bg-black/60">
                     <video
                       src={photo.fileUrl}
@@ -260,8 +263,8 @@ export function UploadForm({ categories, defaultCategoryId, onSuccess }: UploadF
                     unoptimized
                   />
                 )}
-                <div className="px-3 py-2 text-xs text-muted-foreground">
-                  {photo.description ?? "无描述"}
+                <div className="text-muted-foreground px-3 py-2 text-xs">
+                  {photo.description ?? '无描述'}
                 </div>
               </div>
             ))}

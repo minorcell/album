@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Moon, Sun, Monitor } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import * as React from 'react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -16,7 +16,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground"
+        className="hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center rounded-md p-2"
         aria-label="切换主题"
       >
         <Sun className="h-5 w-5" />
@@ -25,20 +25,20 @@ export function ThemeToggle() {
   }
 
   const cycleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-    } else if (theme === "dark") {
-      setTheme("system");
+    if (theme === 'light') {
+      setTheme('dark');
+    } else if (theme === 'dark') {
+      setTheme('system');
     } else {
-      setTheme("light");
+      setTheme('light');
     }
   };
 
   const getIcon = () => {
     switch (theme) {
-      case "light":
+      case 'light':
         return <Sun className="h-5 w-5" />;
-      case "dark":
+      case 'dark':
         return <Moon className="h-5 w-5" />;
       default:
         return <Monitor className="h-5 w-5" />;
@@ -47,19 +47,19 @@ export function ThemeToggle() {
 
   const getLabel = () => {
     switch (theme) {
-      case "light":
-        return "切换到深色模式";
-      case "dark":
-        return "切换到跟随系统";
+      case 'light':
+        return '切换到深色模式';
+      case 'dark':
+        return '切换到跟随系统';
       default:
-        return "切换到浅色模式";
+        return '切换到浅色模式';
     }
   };
 
   return (
     <button
       onClick={cycleTheme}
-      className="inline-flex items-center justify-center rounded-md p-2 transition-colors hover:bg-accent hover:text-accent-foreground"
+      className="hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center rounded-md p-2 transition-colors"
       aria-label={getLabel()}
       title={getLabel()}
     >
